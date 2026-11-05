@@ -173,18 +173,46 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
   group.add(doormat);
 
   if (h > 2.2) {
-    const windowGeometry = new THREE.BoxGeometry(0.66, 0.74, 0.1);
-    [-1, 1].forEach((side) => {
-      const win = new THREE.Mesh(windowGeometry, toon(PAPER.window));
-      win.position.set(side * w * 0.29, h * 0.62, d / 2 + 0.04);
-      win.userData.buildingId = def.id;
-      group.add(win);
-      hitTargets.push(win);
-      const sash = outline(windowGeometry, PAPER.trim, 0.5);
-      sash.position.copy(win.position);
-      sash.scale.set(1.02, 1.02, 1);
-      group.add(sash);
-    });
+    // 窗按墙面尺寸排布：楼越大，开的窗越多
+    const cols = Math.max(2, Math.round(w / 2.4));
+    const spacing = w / cols;
+    const winW = Math.min(1.05, spacing * 0.56);
+    const winH = Math.min(1.2, winW * 1.3);
+    const rows = h > 4.6 ? 2 : 1;
+    const frontGeometry = new THREE.BoxGeometry(winW, winH, 0.1);
+    const sideGeometry = new THREE.BoxGeometry(0.1, winH, winW);
+    // 等距视角下能看到的是 +Z 面与「朝镜头那一侧」的侧面
+    const sideSign = def.facing === "east" ? -1 : 1;
+
+    for (let r = 0; r < rows; r += 1) {
+      const y = rows === 1 ? Math.min(h * 0.6, 2.2) : h * (0.34 + r * 0.27);
+
+      for (let c = 0; c < cols; c += 1) {
+        const x = (c - (cols - 1) / 2) * spacing;
+        if (r === 0 && Math.abs(x) < doorWidth * 0.85 + 0.2) continue;
+        const win = new THREE.Mesh(frontGeometry, toon(PAPER.window));
+        win.position.set(x, y, d / 2 + 0.04);
+        win.userData.buildingId = def.id;
+        group.add(win);
+        hitTargets.push(win);
+        const sash = outline(frontGeometry, PAPER.trim, 0.5);
+        sash.position.copy(win.position);
+        group.add(sash);
+      }
+
+      const sideCols = Math.max(1, Math.round(d / 3.2));
+      for (let c = 0; c < sideCols; c += 1) {
+        const z = (c - (sideCols - 1) / 2) * (d / sideCols);
+        const win = new THREE.Mesh(sideGeometry, toon(PAPER.window));
+        win.position.set(sideSign * (w / 2 + 0.04), y, z);
+        win.userData.buildingId = def.id;
+        group.add(win);
+        hitTargets.push(win);
+        const sash = outline(sideGeometry, PAPER.trim, 0.5);
+        sash.position.copy(win.position);
+        group.add(sash);
+      }
+    }
   }
 
   const signTexture = createSignTexture(def.name, accent.base, PAPER.trim);
@@ -193,7 +221,7 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
     new THREE.PlaneGeometry(signWidth, signWidth * 0.29),
     new THREE.MeshBasicMaterial({ map: signTexture, transparent: true, toneMapped: false }),
   );
-  sign.position.set(0, Math.min(h * 0.74, 2.75), d / 2 + 0.07);
+  sign.position.set(0, h > 4.2 ? h * 0.78 : Math.min(h * 0.74, 2.75), d / 2 + 0.07);
   group.add(sign);
 
   const highlight = new THREE.Mesh(
@@ -213,7 +241,8 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
     group,
     hitTargets,
     height: h + 2.6,
-    doorPoint: new THREE.Vector3(0, 0, d / 2 + 2.3),
+    // 门口落点必须落在建筑碰撞圈之外，否则 nearestWalkable 会把人挤到旁边
+    doorPoint: new THREE.Vector3(0, 0, Math.max(d / 2 + 2.4, Math.max(w, d) * 0.62 + 1)),
     setActive(active: boolean) {
       highlightMaterial.opacity = active ? 0.85 : 0;
       hoverLift = active ? 0.14 : 0;

@@ -121,7 +121,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.background = new THREE.Color(0xf8f2e4);
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
-  camera.position.set(52, 52, 52);
+  camera.position.set(65, 65, 65);
   camera.lookAt(0, -0.4, 0);
 
   const view = { zoom: 1 };
@@ -130,7 +130,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     const w = container.clientWidth;
     const h = container.clientHeight;
     const aspect = w / Math.max(h, 1);
-    const halfHeight = Math.max(31, 50 / aspect);
+    const halfHeight = Math.max(39, 63 / aspect);
     camera.left = -halfHeight * aspect;
     camera.right = halfHeight * aspect;
     camera.top = halfHeight;
@@ -145,15 +145,15 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(hemisphere);
 
   const sun = new THREE.DirectionalLight(0xfff2d8, 2.1);
-  sun.position.set(48, 70, 32);
+  sun.position.set(60, 88, 40);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -50;
-  sun.shadow.camera.right = 50;
-  sun.shadow.camera.top = 50;
-  sun.shadow.camera.bottom = -50;
+  sun.shadow.camera.left = -62;
+  sun.shadow.camera.right = 62;
+  sun.shadow.camera.top = 62;
+  sun.shadow.camera.bottom = -62;
   sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 180;
+  sun.shadow.camera.far = 220;
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.045;
   scene.add(sun);
@@ -178,14 +178,14 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
 
   // 两个主路口各铺四条斑马线
   const crossings: [number, number, number, "x" | "z"][] = [
-    [-2, -13, 5.6, "x"],
-    [-2, -7, 5.6, "x"],
-    [-7, -10, 4.2, "z"],
-    [3.2, -10, 4.2, "z"],
-    [-2, 9, 5.6, "x"],
-    [-2, 15.8, 5.6, "x"],
-    [-7, 12.2, 4.2, "z"],
-    [3.2, 12.2, 4.2, "z"],
+    [-3, -17, 7, "x"],
+    [-3, -8, 7, "x"],
+    [-8.9, -12.5, 5.2, "z"],
+    [2.8, -12.5, 5.2, "z"],
+    [-1.8, 10.6, 7, "x"],
+    [-1.8, 20, 7, "x"],
+    [-7.7, 15.3, 5.2, "z"],
+    [4, 15.3, 5.2, "z"],
   ];
   crossings.forEach(([x, z, span, along]) => {
     scene.add(createCrosswalk(x, z, span, along));
@@ -227,7 +227,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   BENCHES.forEach((bench) => scene.add(createBench(bench.x, bench.z, bench.rot)));
   PLANTERS.forEach(([x, z]) => scene.add(createPlanter(x, z)));
   STALLS.forEach((stall) => scene.add(createStall(stall.x, stall.z, stall.accent)));
-  scene.add(createMailbox(3, -5.6));
+  scene.add(createMailbox(3.7, -7));
 
   // 绿植：手动点位 + 每块草地四角自动补灌木
   const yardBushes: { x: number; z: number; s: number }[] = [];
@@ -316,7 +316,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   character.scale.setScalar(1.22);
   const actor = {
     group: character,
-    pos: new THREE.Vector3(-2, 0, 7.8),
+    pos: new THREE.Vector3(-2.5, 0, 9.9),
     facing: Math.PI,
     path: [] as Point[],
     targetId: null as string | null,
@@ -699,12 +699,12 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     resetView() {
       view.zoom = 1;
       camera.zoom = 1;
-      camera.position.set(52, 52, 52);
+      camera.position.set(65, 65, 65);
       camera.lookAt(0, -0.4, 0);
       camera.updateProjectionMatrix();
     },
     focusOn(x: number, z: number, zoom = 1.4) {
-      camera.position.set(x + 52, 52, z + 52);
+      camera.position.set(x + 65, 65, z + 65);
       camera.lookAt(x, -0.4, z);
       view.zoom = zoom;
       camera.zoom = zoom;
