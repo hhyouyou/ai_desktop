@@ -315,9 +315,9 @@ export const BUILDINGS: BuildingDef[] = [
     desc: "到点会亮的日程，都挂在钟面上",
     x: 8.75,
     z: 25,
-    w: 4.96,
-    d: 4.96,
-    h: 12.81,
+    w: 4,
+    d: 4,
+    h: 13.6,
     roof: "tower",
     accent: "sun",
     facing: "south",
@@ -354,7 +354,10 @@ export type AnnexKind =
   | "topiary"
   | "flagpole"
   | "notice"
-  | "monument";
+  | "monument"
+  /* 钟楼 */
+  | "sundial"
+  | "bellframe";
 
 export type AnnexDef = {
   kind: AnnexKind;
@@ -414,6 +417,25 @@ export const SITES: SiteDef[] = [
       // 长椅
       { kind: "bench", x: 6, z: 10.4, rot: 0 },
       { kind: "bench", x: 9, z: 10.4, rot: 0 },
+    ],
+  },
+  {
+    id: "clocktower",
+    annexes: [
+      // 钟塔广场：铺装从塔基铺开，四面都能坐
+      { kind: "paving", x: 8.75, z: 24, w: 10.2, d: 12 },
+      // 计时的另外两件东西：日晷与钟架
+      { kind: "sundial", x: 6.1, z: 26.6 },
+      { kind: "bellframe", x: 11.4, z: 26.6, rot: Math.PI / 2 },
+      // 四角的球树
+      { kind: "topiary", x: 4.5, z: 18.9 },
+      { kind: "topiary", x: 13, z: 18.9 },
+      { kind: "topiary", x: 4.5, z: 29.2 },
+      { kind: "topiary", x: 13, z: 29.2 },
+      // 面朝钟塔的长椅
+      { kind: "bench", x: 6.6, z: 19.8, rot: 0 },
+      { kind: "bench", x: 10.9, z: 19.8, rot: 0 },
+      { kind: "lamp", x: 4.3, z: 22.8 },
     ],
   },
   {
@@ -586,7 +608,7 @@ export const YARDS: { x: number; z: number; w: number; d: number }[] = [
   { x: 7.5, z: -8, w: 8, d: 6 },
   { x: 7.5, z: -25.5, w: 7, d: 4.2 },
   { x: 36, z: 2, w: 5, d: 9 },
-  { x: 8.75, z: 31.5, w: 7, d: 6 },
+  { x: 8.75, z: 34.5, w: 7, d: 5 },
 ];
 
 export const BUSHES: PropSpot[] = [

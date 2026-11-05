@@ -565,7 +565,54 @@ function cafe(def: BuildingDef, tone: Tone): THREE.Group {
   return g;
 }
 
-/* ------------------------------ 13 钟楼：尖顶 + 摆动的钟摆 ------------------------------ */
+/* ------------------------------ 13 钟楼：钟面 + 尖顶 + 钟摆 ------------------------------ */
+
+/** 一块真实的钟面：表盘、十二道刻度、按当前时间摆好的时针分针 */
+function makeDial(radius: number): THREE.Group {
+  const dial = new THREE.Group();
+
+  const disc = m(new THREE.CylinderGeometry(radius, radius, 0.1, 26), PAPER.wall);
+  disc.rotation.x = Math.PI / 2;
+  dial.add(disc);
+
+  const rim = new THREE.Mesh(
+    new THREE.RingGeometry(radius * 0.9, radius, 26),
+    new THREE.MeshBasicMaterial({ color: PAPER.trim, toneMapped: false }),
+  );
+  rim.position.z = 0.056;
+  dial.add(rim);
+
+  for (let i = 0; i < 12; i += 1) {
+    const angle = (i / 12) * Math.PI * 2;
+    const tick = m(
+      new THREE.BoxGeometry(i % 3 === 0 ? 0.09 : 0.055, i % 3 === 0 ? radius * 0.2 : radius * 0.11, 0.02),
+      PAPER.ink,
+      Math.sin(angle) * radius * 0.76,
+      Math.cos(angle) * radius * 0.76,
+      0.062,
+    );
+    tick.rotation.z = -angle;
+    dial.add(tick);
+  }
+
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const hours = now.getHours() % 12;
+
+  const makeHand = (length: number, width: number, angle: number, color: number) => {
+    const hand = new THREE.Group();
+    hand.rotation.z = -angle;
+    hand.add(m(new THREE.BoxGeometry(width, length, 0.03), color, 0, length / 2 - 0.05, 0.08));
+    return hand;
+  };
+  dial.add(makeHand(radius * 0.48, 0.11, ((hours + minutes / 60) / 12) * Math.PI * 2, PAPER.ink));
+  dial.add(makeHand(radius * 0.76, 0.07, (minutes / 60) * Math.PI * 2, 0x8c3a22));
+
+  dial.add(m(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 8), PAPER.trim, 0, 0, 0.1));
+  return dial;
+}
+
+/* ------------------------------ 13 钟楼（续） ------------------------------ */
 
 function clocktower(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
@@ -590,12 +637,25 @@ function clocktower(def: BuildingDef, tone: Tone): THREE.Group {
   spinY(vane, 0.5);
   g.add(vane);
 
+  // 钟面：正反两侧各一块，显示当前时间
+  const faceRadius = Math.min(w, d) * 0.36;
+  const faceY = h * 0.72;
+
+  const frontFace = makeDial(faceRadius);
+  frontFace.position.set(0, faceY, d / 2 + 0.05);
+  g.add(frontFace);
+
+  const sideFace = makeDial(faceRadius);
+  sideFace.rotation.y = Math.PI / 2;
+  sideFace.position.set(w / 2 + 0.05, faceY, 0);
+  g.add(sideFace);
+
   // 侧面钟摆（从塔身外部垂下）
   const pendulum = new THREE.Group();
-  pendulum.position.set(0, h * 0.78, d / 2 + 0.22);
-  const rod = m(new THREE.BoxGeometry(0.09, h * 0.5, 0.09), PAPER.trim, 0, -h * 0.25, 0);
+  pendulum.position.set(0, h * 0.64, d / 2 + 0.22);
+  const rod = m(new THREE.BoxGeometry(0.08, h * 0.24, 0.08), PAPER.trim, 0, -h * 0.12, 0);
   pendulum.add(rod);
-  const bob = m(new THREE.CylinderGeometry(0.34, 0.34, 0.12, 14), tone.base, 0, -h * 0.5, 0);
+  const bob = m(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 14), tone.base, 0, -h * 0.24, 0);
   bob.rotation.x = Math.PI / 2;
   pendulum.add(bob);
   swing(pendulum, 0.24, 1.15);

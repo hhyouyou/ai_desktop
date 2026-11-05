@@ -102,6 +102,8 @@ const ANNEX_OBSTACLE: Partial<Record<AnnexKind, number>> = {
   notice: 0.75,
   flagpole: 0.3,
   monument: 0.95,
+  sundial: 0.7,
+  bellframe: 0.85,
 };
 
 export function createTownScene(container: HTMLElement, callbacks: TownCallbacks): TownScene {

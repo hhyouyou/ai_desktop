@@ -218,6 +218,67 @@ function monument(def: AnnexDef): THREE.Group {
   return group;
 }
 
+/* ------------------------------ 钟楼：计时 ------------------------------ */
+
+/** 日晷：石座、盘面、十二道刻痕、斜立的晷针 */
+function sundial(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+
+  group.add(m(new THREE.CylinderGeometry(0.44, 0.54, 0.86, 10), 0xc9bda2, 0, 0.43, 0));
+  group.add(m(new THREE.CylinderGeometry(0.56, 0.56, 0.08, 12), 0xbfb397, 0, 0.04, 0));
+  group.add(m(new THREE.CylinderGeometry(0.74, 0.74, 0.09, 18), 0xded5bd, 0, 0.9, 0));
+  group.add(m(new THREE.CylinderGeometry(0.76, 0.76, 0.04, 18), 0xb0a488, 0, 0.87, 0));
+
+  for (let i = 0; i < 12; i += 1) {
+    const angle = (i / 12) * Math.PI * 2;
+    const tick = m(new THREE.BoxGeometry(0.05, 0.02, i % 3 === 0 ? 0.2 : 0.12), 0x8f846c, Math.cos(angle) * 0.56, 0.955, Math.sin(angle) * 0.56);
+    tick.rotation.y = -angle;
+    group.add(tick);
+  }
+
+  // 晷针：一块斜立的薄板，影子落在刻痕上
+  const gnomon = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.66, 0.44), toon(0x7a7060));
+  gnomon.position.set(0, 1.24, -0.08);
+  gnomon.rotation.x = -0.58;
+  group.add(gnomon);
+
+  return group;
+}
+
+/** 钟架：四柱、横梁、吊钟、拉绳，钟会轻轻摆 */
+function bellframe(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  [
+    [-0.78, -0.52],
+    [0.78, -0.52],
+    [-0.78, 0.52],
+    [0.78, 0.52],
+  ].forEach(([x, z]) => {
+    group.add(m(new THREE.BoxGeometry(0.13, 2.32, 0.13), 0x6b533a, x, 1.16, z));
+  });
+
+  group.add(m(new THREE.BoxGeometry(1.94, 0.16, 0.16), 0x7d6142, 0, 2.34, -0.52));
+  group.add(m(new THREE.BoxGeometry(1.94, 0.16, 0.16), 0x7d6142, 0, 2.34, 0.52));
+  group.add(m(new THREE.BoxGeometry(0.15, 0.15, 1.2), 0x7d6142, 0, 2.34, 0));
+
+  const bell = new THREE.Group();
+  bell.position.set(0, 2.28, 0);
+  bell.add(m(new THREE.CylinderGeometry(0.26, 0.4, 0.48, 12), 0xc9a24a, 0, -0.26, 0));
+  bell.add(m(new THREE.SphereGeometry(0.11, 8, 6), 0x8a6c30, 0, -0.54, 0));
+  swing(bell, 0.13, 1.5);
+  group.add(bell);
+
+  // 拉绳
+  group.add(m(new THREE.CylinderGeometry(0.022, 0.022, 1.3, 4), 0xc8b48c, 0.58, 1.55, 0));
+  group.add(m(new THREE.SphereGeometry(0.06, 6, 4), 0xc8b48c, 0.58, 0.9, 0));
+
+  return group;
+}
+
 /* ------------------------------ 工坊：木工与铁活 ------------------------------ */
 
 /** 确定性伪随机，保证每次刷新长一样 */
@@ -787,6 +848,10 @@ export function createAnnex(def: AnnexDef): THREE.Group {
       return notice(def);
     case "monument":
       return monument(def);
+    case "sundial":
+      return sundial(def);
+    case "bellframe":
+      return bellframe(def);
     default:
       return new THREE.Group();
   }

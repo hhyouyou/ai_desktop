@@ -221,7 +221,12 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
     new THREE.PlaneGeometry(signWidth, signWidth * 0.29),
     new THREE.MeshBasicMaterial({ map: signTexture, transparent: true, toneMapped: false }),
   );
-  sign.position.set(0, h > 4.2 ? h * 0.78 : Math.min(h * 0.74, 2.75), d / 2 + 0.07);
+  // 钟楼的招牌让给钟面，挂到门楣上方
+  sign.position.set(
+    0,
+    def.id === "clocktower" ? 2.9 : h > 4.2 ? h * 0.78 : Math.min(h * 0.74, 2.75),
+    d / 2 + 0.07,
+  );
   group.add(sign);
 
   const highlight = new THREE.Mesh(
