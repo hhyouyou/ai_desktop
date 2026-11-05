@@ -30,6 +30,7 @@ const NAV = [
 ];
 
 const APPS = [
+  { name: "小镇", href: "/town", icon: "house" as const },
   { name: "工具", href: "/apps", icon: "grid" as const },
   { name: "AI 对话", href: "/ai/app/chat", icon: "spark" as const },
   { name: "待办", href: "/user/todo", icon: "check" as const },

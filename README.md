@@ -31,6 +31,7 @@
 | 模块 | 内容 |
 |---|---|
 | **在线桌面** | 首页：应用栏 + 窗口 + Dock + 小组件；5 套主题（清爽/毛玻璃/极简/平铺/纸面）**全站生效**，可切换、记忆、深链 |
+| **小镇（3D）** | `/town`：可走动的等距纸模小镇，13 栋建筑分别通向各功能；正交等距相机、A* 寻路、走到门口按回车进入；WebGL 不可用时降级为建筑列表 |
 | 工具箱 | 14 款工具：JSON 格式化、图片压缩、二维码生成、计算器、密码生成、MD5、图片裁剪、房贷计算器、文本对比、字数统计、时间戳转换、Base64、九宫格切图、颜色工具。全部浏览器本地计算，文件不上传 |
 | AI 助手 | 对话（流式、多会话、保留历史）、写作（4 种模式）、模型设置（本地保存 Key） |
 | 视觉创作 | 文字生图、灵感画廊、我的创作；未配置 Key 时用程序化几何 SVG 演示 |
@@ -107,9 +108,13 @@ app/
     layout.tsx
     apps/ ai/ drawing/ daily-hot/ daily-brief/ article/ announcements/
     menus/ user/ auth/ scheduled-tasks/ settings/ about/ support/
+  town/                    小镇：3D 等距场景页（独立 HUD，不带 Header）
+    page.tsx               路由 + 供搜索引擎与读屏用的建筑导航
+    town.css               纸面 HUD 样式
   api/                     ai / hot / brief / todo / schedule / auth / favorites / theme
 components/
   desktop/                 主题切换器、桌面时钟
+  town/                    小镇 React 封装、进入卡片与列表降级
   site/                    Header / Footer
   ui/                      分区标题、页头、空状态、统计块
   user/                    设置页、外观面板
@@ -117,6 +122,7 @@ components/
   icons.tsx                全站手写 SVG 图标 + Logo
 lib/
   theme.ts                 主题注册表 + cookie 名 + 校验
+  town/                    小镇：建筑数据、程序化几何、A* 寻路、场景（见 docs/TOWN.md）
   db.ts                    SQLite 单例 + 建表
   auth.ts                  匿名身份 / 密码 / 签名会话
   site.ts                  导航与工具注册表（唯一事实来源）
@@ -130,6 +136,7 @@ data → .data/blockset.db   运行时生成的 SQLite 文件（已 gitignore）
 docs/
   CONVENTIONS.md           设计与编码约定
   THEMES.md                桌面主题机制与新增主题步骤
+  TOWN.md                  3D 小镇的设计方向、建筑映射与实现要点
   HOT-DATA.md              热榜数据源架构与接入说明
   RISK.md                  上线前合规与风险清单
 ```
@@ -157,6 +164,7 @@ docs/
 - 「已安排」只做计划清单与到期高亮，没有常驻后台进程执行任务。
 - 匿名身份绑定 IP+UA，换网络或换浏览器会被视为新访客（正式产品应改为 cookie 设备 id）。
 - 图片压缩走 Canvas，超大图（>20MP）在移动端可能内存不足。
+- 小镇是独立的视觉层：固定日间纸模，暂不跟随 5 套主题变色；建筑内部没有二级菜单，点击直接跳转；首次进入要下载 3D 引擎（约 160 KB gzip）。
 
 ## 开发脚本
 
@@ -172,6 +180,7 @@ node scripts/cdp-theme.mjs   # 真实浏览器验证主题切换（data-theme / 
 npm run brief:gen             # 手动生成一期 AI 简报（每天自动生成见 docs/BRIEF.md）
 npm run brief:task            # 注册 Windows 每日计划任务（08:00）
 node scripts/cdp-shot.mjs /apps/json-reader   # 用本机 Chrome 截图 + 抓控制台错误
+node scripts/town-check.mjs                  # 验证小镇：WebGL 渲染、控制台错误、走到门口
 node scripts/cdp-audit.mjs / /apps            # 移动端横向溢出审计
 ```
 
