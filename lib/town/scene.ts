@@ -31,6 +31,7 @@ import {
   STREETS,
   TOWN_SIZE,
   YARDS,
+  type AnnexKind,
   type BuildingDef,
 } from "./data";
 import {
@@ -80,8 +81,23 @@ export type TownScene = {
   dispose: () => void;
   goToBuilding: (id: string) => void;
   zoomBy: (factor: number) => void;
+  /** 把镜头平移到某处并缩放（等距角度不变），用于聚焦某个地点 */
+  focusOn: (x: number, z: number, zoom?: number) => void;
   resetView: () => void;
   getState: () => { x: number; z: number; moving: boolean; arrived: boolean; target: string | null };
+};
+
+/** 附属物的碰撞半径：没列的（桌椅、花坛、路灯）人可以穿过去 */
+const ANNEX_OBSTACLE: Partial<Record<AnnexKind, number>> = {
+  shed: 2.2,
+  stall: 1.5,
+  well: 1.1,
+  workbench: 1.25,
+  lumber: 1.3,
+  anvil: 0.5,
+  cart: 0.95,
+  shelf: 0.8,
+  grindstone: 0.72,
 };
 
 export function createTownScene(container: HTMLElement, callbacks: TownCallbacks): TownScene {
@@ -284,11 +300,11 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     ...STALLS.map((s) => ({ x: s.x, z: s.z, r: 1.15 })),
     ...SITES.flatMap((site) =>
       site.annexes
-        .filter((annex) => annex.kind === "shed" || annex.kind === "well" || annex.kind === "stall")
+        .filter((annex) => ANNEX_OBSTACLE[annex.kind] !== undefined)
         .map((annex) => ({
           x: annex.x,
           z: annex.z,
-          r: annex.kind === "shed" ? 2.2 : annex.kind === "stall" ? 1.5 : 1.1,
+          r: ANNEX_OBSTACLE[annex.kind] as number,
         })),
     ),
   ]);
@@ -680,6 +696,15 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     resetView() {
       view.zoom = 1;
       camera.zoom = 1;
+      camera.position.set(52, 52, 52);
+      camera.lookAt(0, -0.4, 0);
+      camera.updateProjectionMatrix();
+    },
+    focusOn(x: number, z: number, zoom = 1.4) {
+      camera.position.set(x + 52, 52, z + 52);
+      camera.lookAt(x, -0.4, z);
+      view.zoom = zoom;
+      camera.zoom = zoom;
       camera.updateProjectionMatrix();
     },
     getState() {

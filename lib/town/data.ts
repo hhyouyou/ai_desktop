@@ -121,7 +121,7 @@ export const BUILDINGS: BuildingDef[] = [
     label: "工具箱",
     href: "/apps",
     desc: "14 件随手可用的小工具，都在浏览器本地算",
-    x: -12,
+    x: -15,
     z: -25,
     w: 5.4,
     d: 4.2,
@@ -339,7 +339,15 @@ export type AnnexKind =
   | "chalkboard"
   | "barrels"
   | "well"
-  | "lamp";
+  | "lamp"
+  /* 工坊 */
+  | "pad"
+  | "workbench"
+  | "lumber"
+  | "anvil"
+  | "cart"
+  | "shelf"
+  | "grindstone";
 
 export type AnnexDef = {
   kind: AnnexKind;
@@ -347,6 +355,9 @@ export type AnnexDef = {
   z: number;
   rot?: number;
   length?: number;
+  /** pad 用：场地的宽与进深 */
+  w?: number;
+  d?: number;
   accent?: AccentKey;
 };
 
@@ -357,6 +368,24 @@ export type SiteDef = {
 };
 
 export const SITES: SiteDef[] = [
+  {
+    id: "workshop",
+    annexes: [
+      // 夯土场院：门前的空地压出来，才像个干活的院子
+      { kind: "pad", x: -9.4, z: -23, w: 6, d: 7.6 },
+      // 院子中间：工作台
+      { kind: "workbench", x: -8.6, z: -22.6, rot: 0 },
+      // 南侧：木料堆与料架
+      { kind: "lumber", x: -11.4, z: -20.6, rot: 0.02 },
+      { kind: "shelf", x: -7.2, z: -20.6, rot: -Math.PI / 2 },
+      // 东侧：手推车
+      { kind: "cart", x: -7.2, z: -24.2, rot: 1.2 },
+      // 北侧：铁活的角落
+      { kind: "anvil", x: -10.4, z: -26.4, rot: 0.1 },
+      { kind: "grindstone", x: -7.6, z: -26, rot: 0 },
+      { kind: "lamp", x: -6.5, z: -25.6 },
+    ],
+  },
   {
     id: "cafe",
     annexes: [
@@ -533,10 +562,10 @@ export const YARDS: { x: number; z: number; w: number; d: number }[] = [
 ];
 
 export const BUSHES: PropSpot[] = [
-  { x: -15.8, z: -27.4, s: 1.2 },
-  { x: -15.6, z: -22.6, s: 0.95 },
+  { x: -18.8, z: -27.6, s: 1.2 },
+  { x: -18.6, z: -21.4, s: 0.95 },
   { x: -8.2, z: -27.6, s: 1.1 },
-  { x: -8.4, z: -21.4, s: 1 },
+  { x: -8.2, z: -18, s: 1 },
   { x: -15.4, z: -18.4, s: 1.15 },
   { x: -8.4, z: -13.2, s: 0.95 },
   { x: 2.4, z: -27.6, s: 1.1 },

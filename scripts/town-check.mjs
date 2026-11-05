@@ -141,6 +141,15 @@ async function main() {
   const file1 = path.join(OUT_DIR, "town-01-scene.png");
   fs.writeFileSync(file1, Buffer.from(shot1.data, "base64"));
 
+  // 先拉近看工坊院子（此时还没有进入卡片挡住画面）
+  await evaluate(cdp, `window.__town && window.__town.focusOn(-9.4, -23, 5)`);
+  await sleep(1600);
+  const shot3 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
+  const file3 = path.join(OUT_DIR, "town-03-workshop.png");
+  fs.writeFileSync(file3, Buffer.from(shot3.data, "base64"));
+  await evaluate(cdp, `window.__town && window.__town.resetView()`);
+  await sleep(600);
+
   await evaluate(cdp, `window.__town && window.__town.goToBuilding('workshop')`);
 
   let arrived = { card: false, name: null, label: null };
@@ -165,6 +174,7 @@ async function main() {
   const shot2 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const file2 = path.join(OUT_DIR, "town-02-arrived.png");
   fs.writeFileSync(file2, Buffer.from(shot2.data, "base64"));
+
 
   const errors = cdp.events
     .filter(
@@ -193,6 +203,7 @@ async function main() {
   console.log("=== 截图 ===");
   console.log(file1);
   console.log(file2);
+  console.log(file3);
 
   cdp.close();
 }
