@@ -142,7 +142,7 @@ async function main() {
   fs.writeFileSync(file1, Buffer.from(shot1.data, "base64"));
 
   // 先拉近看工坊院子（此时还没有进入卡片挡住画面）
-  await evaluate(cdp, `window.__town && window.__town.focusOn(-33.5, 0, 4.4)`);
+  await evaluate(cdp, `window.__town && window.__town.focusOn(7.5, -26, 3.6)`);
   await sleep(1600);
   const shot3 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const file3 = path.join(OUT_DIR, "town-03-focus.png");
@@ -150,11 +150,11 @@ async function main() {
   await evaluate(cdp, `window.__town && window.__town.resetView()`);
   await sleep(600);
 
-  await evaluate(cdp, `window.__town && window.__town.goToBuilding('observatory')`);
+  await evaluate(cdp, `window.__town && window.__town.goToBuilding('telegraph')`);
 
   let arrived = { card: false, name: null, label: null };
   let state = null;
-  for (let i = 0; i < 40; i += 1) {
+  for (let i = 0; i < 90; i += 1) {
     await sleep(1000);
     state = await evaluate(cdp, `window.__town && window.__town.getState()`);
     arrived = await evaluate(
@@ -169,6 +169,12 @@ async function main() {
       })()`,
     );
     if (arrived.card) break;
+  }
+
+  // 卡住时把镜头对准人物，方便看它到底被什么挡住
+  if (state && !state.arrived) {
+    await evaluate(cdp, `window.__town && window.__town.focusOn(${state.x}, ${state.z}, 7)`);
+    await sleep(900);
   }
 
   const shot2 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });

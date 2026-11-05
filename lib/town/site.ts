@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { ACCENT, PAPER, type AnnexDef } from "./data";
 import { m, outline, shadowed, spinY, swing, toon } from "./materials";
 import { createBench, createLamp, createPlanter } from "./build";
-import { createFence } from "./props";
+import { createCrates, createFence } from "./props";
 
 /* ------------------------------ 市政厅：广场与仪典 ------------------------------ */
 
@@ -275,6 +275,111 @@ function bellframe(def: AnnexDef): THREE.Group {
   // 拉绳
   group.add(m(new THREE.CylinderGeometry(0.022, 0.022, 1.3, 4), 0xc8b48c, 0.58, 1.55, 0));
   group.add(m(new THREE.SphereGeometry(0.06, 6, 4), 0xc8b48c, 0.58, 0.9, 0));
+
+  return group;
+}
+
+/* ------------------------------ 电报局：线路与电瓶 ------------------------------ */
+
+/** 电线杆：杆、两道横担、绝缘子、小铭牌 */
+function pole(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  const trunk = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.15, 4.4, 8), toon(0x8a6c47)));
+  trunk.position.y = 2.2;
+  group.add(trunk);
+
+  [
+    [4.06, 0],
+    [3.5, 0.1],
+  ].forEach(([y, tilt]) => {
+    const arm = m(new THREE.BoxGeometry(1.5, 0.1, 0.12), 0x7d6142, 0, y, 0);
+    arm.rotation.z = tilt;
+    group.add(arm);
+    [-0.56, 0, 0.56].forEach((x) => {
+      group.add(m(new THREE.CylinderGeometry(0.06, 0.07, 0.14, 6), 0xc2d6d8, x, y + 0.11, 0));
+    });
+  });
+
+  // 杆上的小铁牌
+  group.add(m(new THREE.BoxGeometry(0.2, 0.26, 0.03), 0xe2d8bf, 0.0, 1.9, 0.15));
+  group.add(m(new THREE.BoxGeometry(0.24, 0.3, 0.02), 0x5d5a55, 0, 1.9, 0.12));
+
+  return group;
+}
+
+/** 一根电线：细长条，按 y 抬到空中（配合 pole 使用） */
+function wire(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+  const length = def.length ?? 8;
+  const line = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.045, length), toon(0x4a4038));
+  group.add(line);
+  return group;
+}
+
+/** 蓄电瓶架：木架 + 一排玻璃电瓶 */
+function batteryrack(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  [-0.85, 0.85].forEach((x) => {
+    group.add(m(new THREE.BoxGeometry(0.1, 1.02, 0.1), 0x6b533a, x, 0.51, -0.24));
+    group.add(m(new THREE.BoxGeometry(0.1, 1.02, 0.1), 0x6b533a, x, 0.51, 0.24));
+  });
+  [0.12, 0.56].forEach((y) => {
+    group.add(m(new THREE.BoxGeometry(1.9, 0.07, 0.62), 0x8a6c47, 0, y, 0));
+  });
+
+  // 下层：四只大电瓶
+  [-0.63, -0.21, 0.21, 0.63].forEach((x) => {
+    group.add(m(new THREE.CylinderGeometry(0.16, 0.16, 0.34, 10), 0x9fb9b6, x, 0.3, 0));
+    group.add(m(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 8), 0x5d5a55, x, 0.5, 0));
+  });
+  // 上层：两只小一点的
+  [-0.5, 0.5].forEach((x) => {
+    group.add(m(new THREE.CylinderGeometry(0.13, 0.13, 0.28, 10), 0xa9c2be, x, 0.74, 0));
+    group.add(m(new THREE.CylinderGeometry(0.08, 0.08, 0.05, 8), 0x5d5a55, x, 0.9, 0));
+  });
+
+  return group;
+}
+
+/** 电报桌：小桌、电键、一卷纸带、纸带垂下来 */
+function telegraphdesk(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  const top = 0.86;
+  group.add(m(new THREE.BoxGeometry(1.5, 0.1, 0.72), 0x7a5334, 0, top, 0));
+  [
+    [-0.62, -0.26],
+    [0.62, -0.26],
+    [-0.62, 0.26],
+    [0.62, 0.26],
+  ].forEach(([x, z]) => {
+    group.add(m(new THREE.BoxGeometry(0.09, top, 0.09), 0x8a6c47, x, top / 2, z));
+  });
+  group.add(m(new THREE.BoxGeometry(1.32, 0.05, 0.56), 0x8a6c47, 0, 0.24, 0));
+
+  // 电键：黄铜底座 + 翘起的按键
+  group.add(m(new THREE.BoxGeometry(0.26, 0.05, 0.16), 0xb08b3e, 0.34, top + 0.08, 0.02));
+  const key = m(new THREE.BoxGeometry(0.3, 0.035, 0.06), 0xd8b464, 0.34, top + 0.14, 0.02);
+  key.rotation.z = 0.18;
+  group.add(key);
+
+  // 纸带卷 + 垂下来的一段
+  group.add(m(new THREE.CylinderGeometry(0.12, 0.12, 0.09, 12), 0xece3cd, -0.28, top + 0.1, -0.02));
+  group.add(m(new THREE.BoxGeometry(0.16, 0.02, 0.5), 0xf2ead6, -0.28, top + 0.07, 0.28));
+  group.add(m(new THREE.BoxGeometry(0.16, 0.42, 0.02), 0xf2ead6, -0.28, top + 0.07 - 0.21, 0.52));
+
+  // 桌沿的小墨水瓶
+  group.add(m(new THREE.CylinderGeometry(0.06, 0.07, 0.11, 8), 0x2f3a46, 0.72, top + 0.1, -0.2));
 
   return group;
 }
@@ -939,6 +1044,12 @@ function well(def: AnnexDef): THREE.Group {
 }
 
 export function createAnnex(def: AnnexDef): THREE.Group {
+  const group = buildAnnex(def);
+  if (def.y) group.position.y += def.y;
+  return group;
+}
+
+function buildAnnex(def: AnnexDef): THREE.Group {
   switch (def.kind) {
     case "shed":
       return shed(def);
@@ -1000,6 +1111,16 @@ export function createAnnex(def: AnnexDef): THREE.Group {
       return telescope(def);
     case "stele":
       return stele(def);
+    case "pole":
+      return pole(def);
+    case "wire":
+      return wire(def);
+    case "batteryrack":
+      return batteryrack(def);
+    case "telegraphdesk":
+      return telegraphdesk(def);
+    case "crates":
+      return createCrates(def.x, def.z, def.rot ?? 0);
     default:
       return new THREE.Group();
   }

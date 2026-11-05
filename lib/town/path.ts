@@ -1,5 +1,7 @@
 /**
- * 小镇寻路：1 米网格 + A*，建筑按圆形占地标记为不可走。
+ * 小镇寻路：1 米网格 + A*。
+ * 建筑按矩形占地标记为不可走（大建筑用圆会把窄巷堵死），
+ * 广场、水井、院落小品等圆形物件仍用圆。
  * 只处理平面（x, z），高度由场景决定。
  */
 
@@ -9,15 +11,18 @@ export type Point = { x: number; z: number };
 
 const N = TOWN_SIZE * 2 + 1;
 
+export type Obstacle = { x: number; z: number; r: number };
+export type RectObstacle = { x: number; z: number; hw: number; hd: number };
+
 export type WalkGrid = {
   blocked: Uint8Array;
-  /** 障碍物圆心，用于快速判断 */
-  obstacles: { x: number; z: number; r: number }[];
+  /** 圆形障碍（广场、水井、院落小品） */
+  obstacles: Obstacle[];
+  /** 矩形障碍（建筑与装饰房） */
+  rects: RectObstacle[];
 };
 
-export type Obstacle = { x: number; z: number; r: number };
-
-export function createWalkGrid(obstacles: Obstacle[]): WalkGrid {
+export function createWalkGrid(obstacles: Obstacle[], rects: RectObstacle[] = []): WalkGrid {
   const blocked = new Uint8Array(N * N);
 
   for (let iz = 0; iz < N; iz += 1) {
@@ -25,12 +30,13 @@ export function createWalkGrid(obstacles: Obstacle[]): WalkGrid {
       const x = ix - TOWN_SIZE;
       const z = iz - TOWN_SIZE;
       const outOfBounds = Math.abs(x) > TOWN_SIZE - 1.2 || Math.abs(z) > TOWN_SIZE - 1.2;
-      const hit = obstacles.some((o) => (x - o.x) ** 2 + (z - o.z) ** 2 < o.r ** 2);
-      if (outOfBounds || hit) blocked[iz * N + ix] = 1;
+      const hitCircle = obstacles.some((o) => (x - o.x) ** 2 + (z - o.z) ** 2 < o.r ** 2);
+      const hitRect = !hitCircle && rects.some((r) => Math.abs(x - r.x) < r.hw && Math.abs(z - r.z) < r.hd);
+      if (outOfBounds || hitCircle || hitRect) blocked[iz * N + ix] = 1;
     }
   }
 
-  return { blocked, obstacles };
+  return { blocked, obstacles, rects };
 }
 
 function inBounds(ix: number, iz: number): boolean {
@@ -183,5 +189,6 @@ export function findPath(grid: WalkGrid, start: Point, goal: Point): Point[] | n
 /** 简单碰撞：给键盘自由移动用 */
 export function isWalkable(grid: WalkGrid, x: number, z: number): boolean {
   if (Math.abs(x) > TOWN_SIZE - 1.2 || Math.abs(z) > TOWN_SIZE - 1.2) return false;
+  if (grid.rects.some((r) => Math.abs(x - r.x) < r.hw + 0.15 && Math.abs(z - r.z) < r.hd + 0.15)) return false;
   return !grid.obstacles.some((o) => (x - o.x) ** 2 + (z - o.z) ** 2 < (o.r - 0.35) ** 2);
 }

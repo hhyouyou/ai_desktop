@@ -169,8 +169,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "技术博客",
     href: "/article",
     desc: "长文与笔记，适合坐下来慢慢读",
-    x: 7.5,
-    z: -20,
+    x: 24.5,
+    z: -22,
     w: 7.13,
     d: 6.2,
     h: 5.31,
@@ -361,7 +361,13 @@ export type AnnexKind =
   /* 天文台 */
   | "roundel"
   | "telescope"
-  | "stele";
+  | "stele"
+  /* 电报局 */
+  | "pole"
+  | "wire"
+  | "batteryrack"
+  | "telegraphdesk"
+  | "crates";
 
 export type AnnexDef = {
   kind: AnnexKind;
@@ -369,9 +375,11 @@ export type AnnexDef = {
   z: number;
   rot?: number;
   length?: number;
-  /** pad 用：场地的宽与进深 */
+  /** pad / roundel 用：场地的宽与进深 */
   w?: number;
   d?: number;
+  /** 整体抬高，例如架在空中的电线 */
+  y?: number;
   accent?: AccentKey;
 };
 
@@ -421,6 +429,26 @@ export const SITES: SiteDef[] = [
       // 长椅
       { kind: "bench", x: 6, z: 10.4, rot: 0 },
       { kind: "bench", x: 9, z: 10.4, rot: 0 },
+    ],
+  },
+  {
+    id: "telegraph",
+    annexes: [
+      // 门前整块院场
+      { kind: "pad", x: 7.5, z: -24.6, w: 12.4, d: 6.6 },
+      // 两根电线杆立在院前，两道线横跨过去
+      { kind: "pole", x: 2.4, z: -26.9 },
+      { kind: "pole", x: 12.6, z: -26.9 },
+      { kind: "wire", x: 7.5, z: -26.9, length: 10.2, rot: Math.PI / 2, y: 4.17 },
+      { kind: "wire", x: 7.5, z: -26.9, length: 10.2, rot: Math.PI / 2, y: 3.61 },
+      // 电瓶架与发报桌
+      { kind: "batteryrack", x: 4.3, z: -23.4 },
+      { kind: "telegraphdesk", x: 10.5, z: -23.4, rot: 0.06 },
+      { kind: "crates", x: 12.7, z: -24.8, rot: 0.3 },
+      { kind: "crates", x: 11.8, z: -22.2, rot: -0.25 },
+      { kind: "bench", x: 3.1, z: -22.6, rot: 0 },
+      // 院子西头的资费牌
+      { kind: "notice", x: 2.3, z: -24.9, rot: Math.PI / 2 },
     ],
   },
   {
@@ -488,12 +516,12 @@ export const SITES: SiteDef[] = [
   {
     id: "bookshop",
     annexes: [
-      { kind: "stall", x: 13, z: -21.5, rot: 0, accent: "mint" },
-      { kind: "bench", x: 4.2, z: -18.4, rot: Math.PI / 2 },
-      { kind: "bench", x: 4.2, z: -22.4, rot: Math.PI / 2 },
-      { kind: "planter", x: 3.9, z: -20.4, accent: "violet" },
-      { kind: "lamp", x: 13.2, z: -17.4 },
-      { kind: "barrels", x: 13.4, z: -24.2, rot: -0.2 },
+      { kind: "stall", x: 22.2, z: -15.2, rot: 0, accent: "mint" },
+      { kind: "bench", x: 26.8, z: -15.4, rot: 0 },
+      { kind: "bench", x: 25.4, z: -17.8, rot: Math.PI / 2 },
+      { kind: "planter", x: 28.6, z: -16.2, accent: "violet" },
+      { kind: "lamp", x: 20.9, z: -17.4 },
+      { kind: "barrels", x: 28.8, z: -20.6, rot: -0.2 },
     ],
   },
 ];
@@ -519,7 +547,7 @@ export const DECOR: DecorDef[] = [
   { id: "house-nw-1", kind: "house", x: -35.5, z: -34.5, w: 4.96, d: 4.65, h: 3, accent: "mint", roof: "gable" },
   { id: "house-nw-2", kind: "house", x: -35.5, z: -26.5, w: 4.65, d: 4.65, h: 2.75, accent: "sun", roof: "gable" },
   { id: "house-nw-3", kind: "house", x: -35.5, z: -19.25, w: 4.34, d: 4.34, h: 2.63, accent: "coral", roof: "gable" },
-  { id: "warehouse", kind: "warehouse", x: 31.75, z: -18, w: 7.75, d: 5.27, h: 3.75, accent: "sky", roof: "gable" },
+  { id: "warehouse", kind: "warehouse", x: 34.5, z: -20, w: 7.75, d: 5.27, h: 3.75, accent: "sky", roof: "gable" },
   { id: "house-se-1", kind: "house", x: 34, z: 24.25, w: 4.96, d: 4.65, h: 3, accent: "violet", roof: "gable" },
   { id: "house-se-2", kind: "house", x: 34, z: 31.75, w: 4.65, d: 4.65, h: 2.75, accent: "mint", roof: "gable" },
   { id: "house-se-3", kind: "house", x: 26.5, z: 35.25, w: 4.34, d: 4.34, h: 2.63, accent: "sun", roof: "gable" },
@@ -624,7 +652,6 @@ export const YARDS: { x: number; z: number; w: number; d: number }[] = [
   { x: -33.5, z: -9.8, w: 7, d: 3.2 },
   { x: -34, z: 12, w: 7.5, d: 5.5 },
   { x: 7.5, z: -8, w: 8, d: 6 },
-  { x: 7.5, z: -25.5, w: 7, d: 4.2 },
   { x: 36, z: 2, w: 5, d: 9 },
   { x: 8.75, z: 34.5, w: 7, d: 5 },
 ];

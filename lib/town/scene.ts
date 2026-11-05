@@ -106,6 +106,10 @@ const ANNEX_OBSTACLE: Partial<Record<AnnexKind, number>> = {
   bellframe: 0.85,
   telescope: 0.55,
   stele: 0.65,
+  pole: 0.3,
+  batteryrack: 0.95,
+  telegraphdesk: 0.8,
+  crates: 0.55,
 };
 
 export function createTownScene(container: HTMLElement, callbacks: TownCallbacks): TownScene {
@@ -301,8 +305,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(pickPlane);
 
   const grid: WalkGrid = createWalkGrid([
-    ...BUILDINGS.map((b) => ({ x: b.x, z: b.z, r: Math.max(b.w, b.d) * 0.62 + 0.55 })),
-    ...DECOR.map((d) => ({ x: d.x, z: d.z, r: Math.max(d.w, d.d) * 0.62 + 0.45 })),
+
     { x: PLAZA.x, z: PLAZA.z, r: 1.45 },
     { x: POND.x, z: POND.z, r: Math.max(POND.rx, POND.rz) + 0.35 },
     ...STALLS.map((s) => ({ x: s.x, z: s.z, r: 1.15 })),
@@ -315,6 +318,14 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
           r: ANNEX_OBSTACLE[annex.kind] as number,
         })),
     ),
+  ], [
+    // 建筑用矩形：朝东的建筑整体转了 90°，世界占地是「深 × 宽」
+    ...BUILDINGS.map((b) =>
+      b.facing === "east"
+        ? { x: b.x, z: b.z, hw: b.d / 2 + 0.3, hd: b.w / 2 + 0.3 }
+        : { x: b.x, z: b.z, hw: b.w / 2 + 0.3, hd: b.d / 2 + 0.3 },
+    ),
+    ...DECOR.map((d) => ({ x: d.x, z: d.z, hw: d.w / 2 + 0.25, hd: d.d / 2 + 0.25 })),
   ]);
 
   const character = createCharacter();
