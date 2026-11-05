@@ -5,18 +5,30 @@
 
 import * as THREE from "three";
 import {
+  BARRELS,
   BENCHES,
+  BICYCLES,
+  BINS,
   BUILDINGS,
+  BUSHES,
+  CLOTHESLINES,
+  CRATES,
   DECOR,
+  FENCES,
+  FLOWERS,
   LAMPS,
   PARK,
   PARK_TREES,
+  PATHS,
   PLANTERS,
   PLAZA,
+  POTS,
+  SIGNPOSTS,
   STALLS,
   STREET_TREES,
   STREETS,
   TOWN_SIZE,
+  YARDS,
   type BuildingDef,
 } from "./data";
 import {
@@ -29,14 +41,29 @@ import {
   createLamp,
   createMailbox,
   createPark,
+  createPath,
   createPlanter,
   createPlaza,
   createStall,
   createStreet,
   createTree,
+  createYard,
   disposeSharedMaterials,
   type BuildingHandle,
 } from "./build";
+import {
+  createBarrel,
+  createBicycle,
+  createBushes,
+  createClothesline,
+  createCrates,
+  createFence,
+  createFlowerField,
+  createFlowerPot,
+  createGrassTufts,
+  createSignpost,
+  createTrashBin,
+} from "./props";
 import { createWalkGrid, findPath, isWalkable, nearestWalkable, type Point, type WalkGrid } from "./path";
 
 export type TownCallbacks = {
@@ -116,7 +143,15 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(createGround(TOWN_SIZE));
 
   STREETS.forEach((street) => {
-    scene.add(createStreet(street));
+    scene.add(createStreet(street.points, street.width, street.kind));
+  });
+
+  PATHS.forEach((path) => {
+    scene.add(createPath(path.points, path.width));
+  });
+
+  YARDS.forEach((yard) => {
+    scene.add(createYard(yard.x, yard.z, yard.w, yard.d));
   });
 
   // 两个主路口各铺四条斑马线
@@ -165,6 +200,36 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   PLANTERS.forEach(([x, z]) => scene.add(createPlanter(x, z)));
   STALLS.forEach((stall) => scene.add(createStall(stall.x, stall.z, stall.accent)));
   scene.add(createMailbox(2.4, -5.8));
+
+  // 绿植
+  scene.add(createBushes(BUSHES));
+  scene.add(createFlowerField(FLOWERS));
+
+  const grassSpots: { x: number; z: number; s: number }[] = [];
+  [...BUSHES, ...FLOWERS].forEach((spot, index) => {
+    for (let i = 0; i < 2; i += 1) {
+      const angle = index * 2.3 + i * 1.9;
+      const radius = 0.45 + ((index + i) % 5) * 0.16;
+      grassSpots.push({
+        x: spot.x + Math.cos(angle) * radius,
+        z: spot.z + Math.sin(angle) * radius,
+        s: 0.7 + ((index + i) % 4) * 0.16,
+      });
+    }
+  });
+  scene.add(createGrassTufts(grassSpots));
+
+  // 生活痕迹
+  FENCES.forEach((fence) => scene.add(createFence(fence.x, fence.z, fence.rot, fence.length ?? 2)));
+  BICYCLES.forEach((bike) => scene.add(createBicycle(bike.x, bike.z, bike.rot)));
+  CLOTHESLINES.forEach((line) =>
+    scene.add(createClothesline(line.x, line.z, line.rot, line.length ?? 2.6)),
+  );
+  BINS.forEach(([x, z]) => scene.add(createTrashBin(x, z)));
+  CRATES.forEach((crate) => scene.add(createCrates(crate.x, crate.z, crate.rot)));
+  POTS.forEach((pot) => scene.add(createFlowerPot(pot.x, pot.z, pot.accent ?? "coral")));
+  BARRELS.forEach((barrel) => scene.add(createBarrel(barrel.x, barrel.z)));
+  SIGNPOSTS.forEach((sign) => scene.add(createSignpost(sign.x, sign.z, sign.rot)));
 
   [...PARK_TREES, ...STREET_TREES].forEach(([x, z, scale]) => {
     scene.add(createTree(x, z, scale));
