@@ -3,8 +3,7 @@
  * 只处理平面（x, z），高度由场景决定。
  */
 
-import type { BuildingDef } from "./data";
-import { PLAZA_RADIUS, TOWN_SIZE } from "./data";
+import { TOWN_SIZE } from "./data";
 
 export type Point = { x: number; z: number };
 
@@ -16,19 +15,10 @@ export type WalkGrid = {
   obstacles: { x: number; z: number; r: number }[];
 };
 
-export function createWalkGrid(buildings: BuildingDef[]): WalkGrid {
+export type Obstacle = { x: number; z: number; r: number };
+
+export function createWalkGrid(obstacles: Obstacle[]): WalkGrid {
   const blocked = new Uint8Array(N * N);
-  const obstacles: { x: number; z: number; r: number }[] = [];
-
-  buildings.forEach((building) => {
-    obstacles.push({
-      x: building.x,
-      z: building.z,
-      r: Math.max(building.w, building.d) * 0.62 + 0.55,
-    });
-  });
-
-  obstacles.push({ x: 0, z: 0, r: PLAZA_RADIUS + 0.2 });
 
   for (let iz = 0; iz < N; iz += 1) {
     for (let ix = 0; ix < N; ix += 1) {

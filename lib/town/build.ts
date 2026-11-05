@@ -4,7 +4,16 @@
  */
 
 import * as THREE from "three";
-import { ACCENT, PAPER, PLAZA_RADIUS, type BuildingDef } from "./data";
+import {
+  ACCENT,
+  PAPER,
+  PARK,
+  PLAZA,
+  type AccentKey,
+  type BuildingDef,
+  type DecorDef,
+  type StreetDef,
+} from "./data";
 import { createBoardTexture, createClockTexture, createSignTexture } from "./textures";
 
 /* ------------------------------ 材质 ------------------------------ */
@@ -156,9 +165,10 @@ function createRoof(def: BuildingDef, accent: { base: number; soft: number; ink:
 export function createBuilding(def: BuildingDef): BuildingHandle {
   const group = new THREE.Group();
   group.position.set(def.x, 0, def.z);
-  // 统一朝向镜头（+Z），加一点点确定性倾斜，避免整排建筑过于呆板
+  // 门朝主街（+X）或朝镜头（+Z），加一点点确定性倾斜，避免整排建筑过于呆板
+  const baseRotation = def.facing === "east" ? Math.PI / 2 : 0;
   const tiltSeed = (def.id.charCodeAt(0) + def.id.charCodeAt(1) + def.id.length) % 7;
-  group.rotation.y = (tiltSeed - 3) * 0.022;
+  group.rotation.y = baseRotation + (tiltSeed - 3) * 0.014;
 
   const accent = ACCENT[def.accent];
   const { w, d, h } = def;
@@ -200,6 +210,11 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), flat(0xf4d98a));
   knob.position.set(doorWidth * 0.3, doorHeight * 0.52, d / 2 + 0.2);
   group.add(knob);
+
+  const step = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.7, 0.13, 0.95), toon(PAPER.sidewalk));
+  step.position.set(0, 0.065, d / 2 + 0.58);
+  step.receiveShadow = true;
+  group.add(step);
 
   if (h > 2.2) {
     const windowGeometry = new THREE.BoxGeometry(0.66, 0.74, 0.1);
@@ -331,7 +346,7 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
     group,
     hitTargets,
     height: h + roofRise,
-    doorPoint: new THREE.Vector3(0, 0, d / 2 + 1.5),
+    doorPoint: new THREE.Vector3(0, 0, d / 2 + 2.3),
     setActive(active: boolean) {
       highlightMaterial.opacity = active ? 0.85 : 0;
       hoverLift = active ? 0.14 : 0;
@@ -360,39 +375,40 @@ export function createGround(size: number): THREE.Group {
 
 export function createPlaza(): THREE.Group {
   const group = new THREE.Group();
+  const radius = PLAZA.radius;
 
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA_RADIUS, PLAZA_RADIUS, 0.16, 40), toon(PAPER.plaza));
-  disc.position.y = 0.06;
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.18, 48), toon(PAPER.plaza));
+  disc.position.set(PLAZA.x, 0.09, PLAZA.z);
   disc.receiveShadow = true;
   group.add(disc);
 
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(PLAZA_RADIUS * 0.98, PLAZA_RADIUS * 1.08, 44),
-    new THREE.MeshBasicMaterial({ color: PAPER.plazaEdge, transparent: true, opacity: 0.85, side: THREE.DoubleSide, toneMapped: false }),
+    new THREE.RingGeometry(radius * 0.97, radius * 1.06, 52),
+    new THREE.MeshBasicMaterial({ color: PAPER.plazaEdge, transparent: true, opacity: 0.9, side: THREE.DoubleSide, toneMapped: false }),
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.15;
+  ring.position.set(PLAZA.x, 0.19, PLAZA.z);
   group.add(ring);
 
-  const basin = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.4, 0.46, 24), toon(PAPER.wall));
-  basin.position.y = 0.37;
+  const basin = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.46, 24), toon(PAPER.wall));
+  basin.position.set(PLAZA.x, 0.42, PLAZA.z);
   shadowed(basin);
   group.add(basin);
 
   const water = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.08, 1.08, 0.08, 24),
+    new THREE.CylinderGeometry(0.98, 0.98, 0.08, 24),
     new THREE.MeshToonMaterial({ color: PAPER.water, gradientMap: getGradientMap(), transparent: true, opacity: 0.92 }),
   );
-  water.position.y = 0.58;
+  water.position.set(PLAZA.x, 0.63, PLAZA.z);
   group.add(water);
 
-  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 1.5, 12), toon(PAPER.wall));
-  pillar.position.y = 0.95;
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, 1.4, 12), toon(PAPER.wall));
+  pillar.position.set(PLAZA.x, 1, PLAZA.z);
   shadowed(pillar);
   group.add(pillar);
 
-  const top = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 8), toon(PAPER.plazaEdge));
-  top.position.y = 1.76;
+  const top = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 8), toon(PAPER.plazaEdge));
+  top.position.set(PLAZA.x, 1.78, PLAZA.z);
   group.add(top);
 
   return group;
@@ -495,6 +511,358 @@ export function createCharacter(): THREE.Group {
   marker.rotation.x = -Math.PI / 2;
   marker.position.y = 0.035;
   group.add(marker);
+
+  return group;
+}
+
+/* ------------------------------ 街道 ------------------------------ */
+
+export function createStreet(street: StreetDef): THREE.Group {
+  const group = new THREE.Group();
+  const dx = street.x2 - street.x1;
+  const dz = street.z2 - street.z1;
+  const length = Math.hypot(dx, dz);
+  const angle = Math.atan2(dx, dz);
+  const cx = (street.x1 + street.x2) / 2;
+  const cz = (street.z1 + street.z2) / 2;
+
+  const road = new THREE.Mesh(new THREE.BoxGeometry(street.width, 0.08, length), toon(PAPER.road));
+  road.position.set(cx, 0.04, cz);
+  road.rotation.y = angle;
+  road.receiveShadow = true;
+  group.add(road);
+
+  const swWidth = street.kind === "main" ? 0.95 : 0.72;
+  const swHeight = street.kind === "main" ? 0.2 : street.kind === "cross" ? 0.19 : 0.18;
+  const normalX = Math.cos(angle);
+  const normalZ = -Math.sin(angle);
+
+  [-1, 1].forEach((side) => {
+    const offset = street.width / 2 + swWidth / 2 + 0.05;
+    const walk = new THREE.Mesh(new THREE.BoxGeometry(swWidth, swHeight, length), toon(PAPER.sidewalk));
+    walk.position.set(cx + normalX * offset * side, swHeight / 2, cz + normalZ * offset * side);
+    walk.rotation.y = angle;
+    walk.receiveShadow = true;
+    group.add(walk);
+
+    // 路缘石：贴着路面的一条深色细边
+    const curb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.14, length),
+      toon(0xb3a68c),
+    );
+    const curbOffset = street.width / 2 + 0.08;
+    curb.position.set(cx + normalX * curbOffset * side, 0.07, cz + normalZ * curbOffset * side);
+    curb.rotation.y = angle;
+    group.add(curb);
+  });
+
+  if (street.kind !== "lane") {
+    const dashes = Math.floor(length / 3);
+    for (let i = 0; i < dashes; i += 1) {
+      if (i % 2 === 0) continue;
+      const t = (i - (dashes - 1) / 2) * 3;
+      const dash = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.02, 1.4),
+        new THREE.MeshBasicMaterial({ color: 0xf2ead4, transparent: true, opacity: 0.7, toneMapped: false }),
+      );
+      dash.position.set(cx + (dx / length) * t, 0.088, cz + (dz / length) * t);
+      dash.rotation.y = angle;
+      group.add(dash);
+    }
+  }
+
+  return group;
+}
+
+export function createCrosswalk(cx: number, cz: number, span: number, along: "x" | "z"): THREE.Group {
+  const group = new THREE.Group();
+  const stripes = 6;
+  for (let i = 0; i < stripes; i += 1) {
+    const offset = (i - (stripes - 1) / 2) * 0.6;
+    const geometry =
+      along === "x"
+        ? new THREE.BoxGeometry(span, 0.02, 0.32)
+        : new THREE.BoxGeometry(0.32, 0.02, span);
+    const stripe = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xf6f1e2, toneMapped: false }));
+    stripe.position.set(cx + (along === "x" ? 0 : offset), 0.095, cz + (along === "x" ? offset : 0));
+    group.add(stripe);
+  }
+  return group;
+}
+
+/* ------------------------------ 公园 ------------------------------ */
+
+export function createPark(): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(PARK.x, 0, PARK.z);
+
+  const lawn = new THREE.Mesh(new THREE.BoxGeometry(PARK.w, 0.14, PARK.d), toon(PAPER.grass));
+  lawn.position.y = 0.07;
+  lawn.receiveShadow = true;
+  group.add(lawn);
+
+  const border = new THREE.Mesh(new THREE.BoxGeometry(PARK.w + 0.5, 0.1, PARK.d + 0.5), toon(PAPER.grassDark));
+  border.position.y = 0.03;
+  border.receiveShadow = true;
+  group.add(border);
+
+  const pathA = new THREE.Mesh(new THREE.BoxGeometry(PARK.w - 0.3, 0.04, 0.9), toon(PAPER.sidewalk));
+  pathA.position.set(0, 0.16, 1.9);
+  pathA.receiveShadow = true;
+  group.add(pathA);
+
+  const pathB = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, PARK.d - 0.3), toon(PAPER.sidewalk));
+  pathB.position.set(1.5, 0.16, 0);
+  pathB.receiveShadow = true;
+  group.add(pathB);
+
+  const pondRim = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.5, 0.24, 28), toon(PAPER.plazaEdge));
+  pondRim.position.set(-0.6, 0.2, -1.8);
+  pondRim.receiveShadow = true;
+  group.add(pondRim);
+
+  const pond = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.28, 1.28, 0.1, 28),
+    new THREE.MeshToonMaterial({ color: PAPER.water, gradientMap: getGradientMap() }),
+  );
+  pond.position.set(-0.6, 0.33, -1.8);
+  group.add(pond);
+
+  const lily = new THREE.Mesh(new THREE.CircleGeometry(0.22, 10), toon(PAPER.leaf));
+  lily.rotation.x = -Math.PI / 2;
+  lily.position.set(-0.15, 0.39, -1.5);
+  group.add(lily);
+
+  return group;
+}
+
+/* ------------------------------ 街景小品 ------------------------------ */
+
+export function createLamp(x: number, z: number): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.08, 2.7, 8), toon(0x4a4038));
+  pole.position.y = 1.35;
+  shadowed(pole);
+  group.add(pole);
+
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.07, 0.07), toon(0x4a4038));
+  arm.position.set(0.26, 2.66, 0);
+  group.add(arm);
+
+  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.2, 8), toon(0x4a4038));
+  shade.position.set(0.52, 2.56, 0);
+  shade.rotation.x = Math.PI;
+  group.add(shade);
+
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), flat(0xffe2a8));
+  bulb.position.set(0.52, 2.46, 0);
+  group.add(bulb);
+
+  return group;
+}
+
+export function createBench(x: number, z: number, rot: number): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = rot;
+
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.46), toon(PAPER.trunk));
+  seat.position.y = 0.46;
+  shadowed(seat);
+  group.add(seat);
+
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.44, 0.09), toon(PAPER.trunk));
+  back.position.set(0, 0.7, -0.2);
+  group.add(back);
+
+  [-0.6, 0.6].forEach((offset) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.46, 0.4), toon(0x6b5844));
+    leg.position.set(offset, 0.23, 0);
+    group.add(leg);
+  });
+
+  return group;
+}
+
+export function createPlanter(x: number, z: number): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+
+  const box = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.52, 0.42, 10), toon(PAPER.wallSide));
+  box.position.y = 0.21;
+  shadowed(box);
+  group.add(box);
+
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.06, 10), toon(0x6b5540));
+  soil.position.y = 0.44;
+  group.add(soil);
+
+  const colors = [0xd9603c, 0xe0a23a, 0xd97fae, 0x7b63c4];
+  for (let i = 0; i < 5; i += 1) {
+    const angle = (i / 5) * Math.PI * 2;
+    const flower = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 6),
+      toon(colors[i % colors.length]),
+    );
+    flower.position.set(Math.cos(angle) * 0.24, 0.52, Math.sin(angle) * 0.24);
+    group.add(flower);
+  }
+
+  return group;
+}
+
+export function createStall(x: number, z: number, accent: AccentKey): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  const tone = ACCENT[accent];
+
+  const table = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 0.95), toon(PAPER.trunk));
+  table.position.y = 0.88;
+  shadowed(table);
+  group.add(table);
+
+  [-0.72, 0.72].forEach((offsetX) => {
+    [-0.36, 0.36].forEach((offsetZ) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.88, 0.1), toon(0x6b5844));
+      leg.position.set(offsetX, 0.44, offsetZ);
+      group.add(leg);
+    });
+  });
+
+  [-0.72, 0.72].forEach((offsetX) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 0.08), toon(PAPER.trim));
+    post.position.set(offsetX, 1.48, 0.34);
+    group.add(post);
+  });
+
+  const canopyA = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.09, 0.62), toon(tone.base));
+  canopyA.position.set(0, 2.06, 0.18);
+  canopyA.rotation.x = -0.16;
+  shadowed(canopyA);
+  group.add(canopyA);
+
+  const canopyB = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.09, 0.62), toon(tone.soft));
+  canopyB.position.set(0, 2.06, -0.34);
+  canopyB.rotation.x = -0.16;
+  group.add(canopyB);
+
+  for (let i = 0; i < 3; i += 1) {
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.24, 0.3), toon(i % 2 === 0 ? tone.soft : PAPER.wallSide));
+    crate.position.set(-0.5 + i * 0.5, 1.06, 0);
+    group.add(crate);
+  }
+
+  return group;
+}
+
+export function createMailbox(x: number, z: number): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.05, 0.12), toon(PAPER.trim));
+  post.position.y = 0.52;
+  shadowed(post);
+  group.add(post);
+
+  const boxBody = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.46, 0.4), toon(0xd9603c));
+  boxBody.position.y = 1.2;
+  shadowed(boxBody);
+  group.add(boxBody);
+
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.42, 10, 1, false, 0, Math.PI), toon(0xb34b2e));
+  roof.rotation.z = Math.PI / 2;
+  roof.position.y = 1.43;
+  group.add(roof);
+
+  return group;
+}
+
+/* ------------------------------ 装饰建筑 ------------------------------ */
+
+export function createDecorBuilding(def: DecorDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  const tone = ACCENT[def.accent];
+
+  if (def.kind === "watertower") {
+    const legGeometry = new THREE.CylinderGeometry(0.09, 0.11, def.h * 0.52, 6);
+    [
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+    ].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(legGeometry, toon(0x6b5844));
+      leg.position.set(lx * def.w * 0.28, (def.h * 0.52) / 2, lz * def.d * 0.28);
+      shadowed(leg);
+      group.add(leg);
+    });
+
+    const brace = new THREE.Mesh(new THREE.BoxGeometry(def.w * 0.6, 0.08, def.d * 0.6), toon(0x6b5844));
+    brace.position.y = def.h * 0.3;
+    group.add(brace);
+
+    const tank = new THREE.Mesh(
+      new THREE.CylinderGeometry(def.w * 0.48, def.w * 0.48, def.h * 0.4, 16),
+      toon(tone.soft),
+    );
+    tank.position.y = def.h * 0.52 + def.h * 0.2;
+    shadowed(tank);
+    group.add(tank);
+
+    const lid = new THREE.Mesh(new THREE.ConeGeometry(def.w * 0.52, 0.7, 16), toon(PAPER.roofSide));
+    lid.position.y = def.h * 0.52 + def.h * 0.4 + 0.35;
+    group.add(lid);
+
+    return group;
+  }
+
+  const body = shadowed(
+    new THREE.Mesh(
+      new THREE.BoxGeometry(def.w, def.h, def.d),
+      toon(def.kind === "warehouse" ? PAPER.wallSide : PAPER.wall),
+    ),
+  );
+  body.position.y = def.h / 2;
+  group.add(body);
+
+  const rise = Math.max(0.9, Math.min(def.w, def.d) * 0.4);
+  const shape = new THREE.Shape();
+  shape.moveTo(-def.w / 2 - 0.22, 0);
+  shape.lineTo(def.w / 2 + 0.22, 0);
+  shape.lineTo(0, rise);
+  shape.closePath();
+  const roofGeometry = new THREE.ExtrudeGeometry(shape, { depth: def.d + 0.36, bevelEnabled: false });
+  roofGeometry.translate(0, 0, -(def.d + 0.36) / 2);
+  const roofMesh = shadowed(new THREE.Mesh(roofGeometry, toon(tone.soft)));
+  roofMesh.position.y = def.h;
+  group.add(roofMesh);
+
+  const doorWidth = def.kind === "warehouse" ? 1.9 : 0.92;
+  const doorHeight = def.kind === "warehouse" ? def.h * 0.62 : 1.65;
+  const door = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 0.12), toon(tone.ink));
+  door.position.set(0, doorHeight / 2, def.d / 2 + 0.02);
+  group.add(door);
+
+  if (def.kind === "warehouse") {
+    for (let i = 1; i < 5; i += 1) {
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, 0.05, 0.04), toon(0x8c3a22));
+      slat.position.set(0, (doorHeight / 5) * i, def.d / 2 + 0.09);
+      group.add(slat);
+    }
+  } else {
+    [-1, 1].forEach((side) => {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.52, 0.08), toon(PAPER.window));
+      win.position.set(side * def.w * 0.3, def.h * 0.6, def.d / 2 + 0.02);
+      group.add(win);
+    });
+
+    const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.9, 0.34), toon(PAPER.wallSide));
+    chimney.position.set(-def.w * 0.28, def.h + 0.45, -def.d * 0.16);
+    group.add(chimney);
+  }
 
   return group;
 }

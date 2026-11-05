@@ -4,13 +4,35 @@
  */
 
 import * as THREE from "three";
-import { BUILDINGS, PLAZA_RADIUS, TOWN_SIZE, type BuildingDef } from "./data";
 import {
+  BENCHES,
+  BUILDINGS,
+  DECOR,
+  LAMPS,
+  PARK,
+  PARK_TREES,
+  PLANTERS,
+  PLAZA,
+  STALLS,
+  STREET_TREES,
+  STREETS,
+  TOWN_SIZE,
+  type BuildingDef,
+} from "./data";
+import {
+  createBench,
   createBuilding,
   createCharacter,
+  createCrosswalk,
+  createDecorBuilding,
   createGround,
+  createLamp,
+  createMailbox,
+  createPark,
+  createPlanter,
   createPlaza,
-  createRoad,
+  createStall,
+  createStreet,
   createTree,
   disposeSharedMaterials,
   type BuildingHandle,
@@ -31,23 +53,6 @@ export type TownScene = {
   resetView: () => void;
   getState: () => { x: number; z: number; moving: boolean; arrived: boolean; target: string | null };
 };
-
-const TREE_SPOTS: [number, number, number][] = [
-  [-16, -9, 1.05],
-  [-15.5, -14, 0.9],
-  [-9, -15.5, 1.1],
-  [0, -16, 0.95],
-  [8, -14.5, 1.05],
-  [15.5, -12, 0.9],
-  [16.5, -7, 1],
-  [16, 1, 1.05],
-  [16, 8, 0.95],
-  [-16.5, -2, 1],
-  [-16.5, 11, 1.05],
-  [-14, 16, 0.9],
-  [11, 15, 1],
-  [-3, -16, 0.9],
-];
 
 export function createTownScene(container: HTMLElement, callbacks: TownCallbacks): TownScene {
   const width = container.clientWidth;
@@ -76,7 +81,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     const w = container.clientWidth;
     const h = container.clientHeight;
     const aspect = w / Math.max(h, 1);
-    const halfHeight = Math.max(16, 26 / aspect);
+    const halfHeight = Math.max(26, 40 / aspect);
     camera.left = -halfHeight * aspect;
     camera.right = halfHeight * aspect;
     camera.top = halfHeight;
@@ -91,15 +96,15 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(hemisphere);
 
   const sun = new THREE.DirectionalLight(0xfff2d8, 2.1);
-  sun.position.set(20, 34, 14);
+  sun.position.set(34, 52, 24);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -26;
-  sun.shadow.camera.right = 26;
-  sun.shadow.camera.top = 26;
-  sun.shadow.camera.bottom = -26;
+  sun.shadow.camera.left = -38;
+  sun.shadow.camera.right = 38;
+  sun.shadow.camera.top = 38;
+  sun.shadow.camera.bottom = -38;
   sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 110;
+  sun.shadow.camera.far = 150;
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.045;
   scene.add(sun);
@@ -109,7 +114,32 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(fill);
 
   scene.add(createGround(TOWN_SIZE));
+
+  STREETS.forEach((street) => {
+    scene.add(createStreet(street));
+  });
+
+  // 两个主路口各铺四条斑马线
+  const crossings: [number, number, number, "x" | "z"][] = [
+    [-1.5, -10.4, 5.2, "x"],
+    [-1.5, -4.6, 5.2, "x"],
+    [-5.4, -7.5, 4, "z"],
+    [2.4, -7.5, 4, "z"],
+    [-1.5, 6.6, 5.2, "x"],
+    [-1.5, 12.4, 5.2, "x"],
+    [-5.4, 9.5, 4, "z"],
+    [2.4, 9.5, 4, "z"],
+  ];
+  crossings.forEach(([x, z, span, along]) => {
+    scene.add(createCrosswalk(x, z, span, along));
+  });
+
   scene.add(createPlaza());
+  scene.add(createPark());
+
+  DECOR.forEach((item) => {
+    scene.add(createDecorBuilding(item));
+  });
 
   const handles = new Map<string, BuildingHandle>();
   const hitTargets: THREE.Object3D[] = [];
@@ -130,33 +160,13 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     return point;
   }
 
-  // 广场外一圈环路，再从环路向每栋建筑引一小段支路（不穿模）
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(PLAZA_RADIUS + 0.35, PLAZA_RADIUS + 1.85, 72),
-    new THREE.MeshToonMaterial({ color: 0xe8dbc2 }),
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.025;
-  ring.receiveShadow = true;
-  scene.add(ring);
+  LAMPS.forEach(([x, z]) => scene.add(createLamp(x, z)));
+  BENCHES.forEach((bench) => scene.add(createBench(bench.x, bench.z, bench.rot)));
+  PLANTERS.forEach(([x, z]) => scene.add(createPlanter(x, z)));
+  STALLS.forEach((stall) => scene.add(createStall(stall.x, stall.z, stall.accent)));
+  scene.add(createMailbox(2.4, -5.8));
 
-  BUILDINGS.forEach((def) => {
-    const radius = Math.hypot(def.x, def.z) || 1;
-    const dirX = def.x / radius;
-    const dirZ = def.z / radius;
-    const startRadius = PLAZA_RADIUS + 1.85;
-    const endRadius = radius - Math.max(def.w, def.d) / 2 - 0.7;
-    if (endRadius <= startRadius + 0.5) return;
-    scene.add(
-      createRoad(
-        new THREE.Vector3(dirX * startRadius, 0, dirZ * startRadius),
-        new THREE.Vector3(dirX * endRadius, 0, dirZ * endRadius),
-        0.85,
-      ),
-    );
-  });
-
-  TREE_SPOTS.forEach(([x, z, scale]) => {
+  [...PARK_TREES, ...STREET_TREES].forEach(([x, z, scale]) => {
     scene.add(createTree(x, z, scale));
   });
 
@@ -168,14 +178,20 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   pickPlane.position.y = 0.02;
   scene.add(pickPlane);
 
-  const grid: WalkGrid = createWalkGrid(BUILDINGS);
+  const grid: WalkGrid = createWalkGrid([
+    ...BUILDINGS.map((b) => ({ x: b.x, z: b.z, r: Math.max(b.w, b.d) * 0.62 + 0.55 })),
+    ...DECOR.map((d) => ({ x: d.x, z: d.z, r: Math.max(d.w, d.d) * 0.62 + 0.45 })),
+    { x: PLAZA.x, z: PLAZA.z, r: 1.45 },
+    { x: PARK.x - 0.6, z: PARK.z - 1.8, r: 1.55 },
+    ...STALLS.map((s) => ({ x: s.x, z: s.z, r: 1.15 })),
+  ]);
 
   const character = createCharacter();
   character.scale.setScalar(1.22);
   const actor = {
     group: character,
-    pos: new THREE.Vector3(0.6, 0, 4.8),
-    facing: 0,
+    pos: new THREE.Vector3(-1.5, 0, 7.4),
+    facing: Math.PI,
     path: [] as Point[],
     targetId: null as string | null,
     moving: false,
