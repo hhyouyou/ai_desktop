@@ -1,10 +1,9 @@
 /**
- * 小镇的唯一事实来源：街道、街区、建筑、装饰、街景、色板。
+ * 小镇的唯一事实来源：街道、街区、地点（主楼 + 附属）、装饰、色板。
  *
- * 平面结构（56 × 56，坐标 -28..28）：
- *   街道全部是直线段，但每条的走向都偏几度、长度不一、有的不贯穿，
- *   因此街区大小不等，看起来不像规划图。
- *   主街中段是市集广场，西南角是公园，西北与东南是住宅区，东北有仓库。
+ * 平面结构（64 × 64，坐标 -32..32）：
+ *   街道全部是直线段，但每条走向都偏几度、长度不一、有的不贯穿。
+ *   每个「地点」占 10–14 米见方，主楼之外还带附属建筑与户外设施。
  */
 
 export type RoofKind = "gable" | "flat" | "pyramid" | "dome" | "tower";
@@ -22,7 +21,6 @@ export type ExtraKind =
   | "tank"
   | "lantern";
 
-/** 门朝哪边：east = 朝 +X（朝主街），south = 朝 +Z（朝镜头） */
 export type Facing = "east" | "south";
 
 export type BuildingDef = {
@@ -42,7 +40,6 @@ export type BuildingDef = {
   extras?: ExtraKind[];
 };
 
-/** 纸模基础色 */
 export const PAPER = {
   wall: 0xfbf6ea,
   wallSide: 0xe9dcc4,
@@ -57,8 +54,8 @@ export const PAPER = {
   plaza: 0xddd0b4,
   plazaEdge: 0xbdaa86,
   water: 0xa9c9cf,
-  grass: 0xbdd194,
-  grassDark: 0xa2b878,
+  grass: 0xc2d49c,
+  grassDark: 0xa6bb80,
   leaf: 0x8aa96e,
   leafDark: 0x627f4c,
   trunk: 0x9b7a56,
@@ -89,42 +86,31 @@ export type StreetDef = {
   kind: StreetKind;
 };
 
-/**
- * 每条街都是直的，但没有一条严格水平/垂直，长度也各不相同：
- * 主街偏 2°，北横街偏 1.2°，南横街偏 1.7°，西纵街只到 z=9 就断了，
- * 另有一条斜巷从公园斜插向东南。
- */
 export const STREETS: StreetDef[] = [
-  { id: "main", x1: -2.6, z1: -27.5, x2: -0.4, z2: 27.5, width: 5.6, kind: "main" },
-  { id: "north-cross", x1: -27.5, z1: -9.6, x2: 27.5, z2: -8.6, width: 4.3, kind: "cross" },
-  { id: "south-cross", x1: -27.5, z1: 11.6, x2: 27.5, z2: 12.9, width: 4.1, kind: "cross" },
-  { id: "west-lane", x1: -20.4, z1: -27.5, x2: -18.9, z2: 9.2, width: 3.4, kind: "lane" },
-  { id: "east-lane", x1: 12.4, z1: -27.5, x2: 13.8, z2: 27.5, width: 3.6, kind: "lane" },
-  { id: "mill-lane", x1: -22.4, z1: 13.6, x2: -14.6, z2: 25.4, width: 2.5, kind: "lane" },
+  { id: "main", x1: -3.4, z1: -31.5, x2: -0.6, z2: 31.5, width: 5.8, kind: "main" },
+  { id: "north-cross", x1: -31.5, z1: -10.6, x2: 31.5, z2: -9.4, width: 4.3, kind: "cross" },
+  { id: "south-cross", x1: -31.5, z1: 11.6, x2: 31.5, z2: 12.9, width: 4.1, kind: "cross" },
+  { id: "west-lane", x1: -22.6, z1: -31.5, x2: -21.2, z2: 11.2, width: 3.4, kind: "lane" },
+  { id: "east-lane", x1: 13.4, z1: -31.5, x2: 14.8, z2: 31.5, width: 3.6, kind: "lane" },
+  { id: "mill-lane", x1: -25.6, z1: 14.4, x2: -17.2, z2: 27.4, width: 2.5, kind: "lane" },
 ];
 
-/** 街区里的泥土小径：直线斜穿空地，打破网格感 */
 export const PATHS: { x1: number; z1: number; x2: number; z2: number; width?: number }[] = [
-  { x1: -20.8, z1: 14.6, x2: -13.2, z2: 13.2, width: 1.2 },
-  { x1: -13.6, z1: -24.4, x2: -6.8, z2: -24.2, width: 1.1 },
-  { x1: 17.8, z1: 6, x2: 23.4, z2: 8.4, width: 1.15 },
-  { x1: -13, z1: 27, x2: -8, z2: 27.4, width: 1 },
+  { x1: -21.8, z1: 16.2, x2: -13.4, z2: 14.8, width: 1.2 },
+  { x1: -18.6, z1: -29.4, x2: -8.2, z2: -29.2, width: 1.1 },
+  { x1: 20.4, z1: 6.6, x2: 27.4, z2: 9.4, width: 1.15 },
+  { x1: -18, z1: 30.4, x2: -11, z2: 30.8, width: 1 },
 ];
 
-/** 市集广场：主街中段的圆形空地 */
-export const PLAZA = { x: -1.6, z: 1.2, radius: 5.1 } as const;
+export const PLAZA = { x: -2, z: 1.2, radius: 5.3 } as const;
 
-/** 公园：西南角的大片绿地 */
-export const PARK = { x: -23.2, z: 20.4, w: 9.4, d: 14.6 } as const;
+export const PARK = { x: -27.4, z: 22.6, w: 8.6, d: 16.4 } as const;
 
-/** 公园里的池塘（世界坐标，相对公园中心的偏移也与之一致） */
-export const POND = { x: -25.3, z: 16.8, rx: 2.3, rz: 1.75 } as const;
+export const POND = { x: -29.6, z: 18.2, rx: 2.2, rz: 1.7 } as const;
 
-/** 凉亭 */
-export const GAZEBO = { x: -21.4, z: 23.8, radius: 1.8 } as const;
+export const GAZEBO = { x: -25, z: 26.4, radius: 1.8 } as const;
 
-/** 地块半径 */
-export const TOWN_SIZE = 28;
+export const TOWN_SIZE = 32;
 
 /* ------------------------------ 功能建筑 ------------------------------ */
 
@@ -135,8 +121,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "工具箱",
     href: "/apps",
     desc: "14 件随手可用的小工具，都在浏览器本地算",
-    x: -10.2,
-    z: -20.4,
+    x: -12,
+    z: -25,
     w: 5.4,
     d: 4.2,
     h: 3.1,
@@ -146,13 +132,29 @@ export const BUILDINGS: BuildingDef[] = [
     extras: ["chimney", "board"],
   },
   {
+    id: "typewriter",
+    name: "打字机铺",
+    label: "AI 写作",
+    href: "/ai/app/writing",
+    desc: "标题、摘要、润色、大纲，文字在这里成形",
+    x: -12,
+    z: -16,
+    w: 4,
+    d: 3.8,
+    h: 3.1,
+    roof: "gable",
+    accent: "blue",
+    facing: "east",
+    extras: ["chimney"],
+  },
+  {
     id: "telegraph",
     name: "电报局",
     label: "AI 对话",
     href: "/ai/app/chat",
     desc: "一问一答，消息在镇口来回传送",
-    x: 6.2,
-    z: -20.4,
+    x: 6,
+    z: -25,
     w: 4.4,
     d: 4,
     h: 3.4,
@@ -162,29 +164,13 @@ export const BUILDINGS: BuildingDef[] = [
     extras: ["antenna", "lantern"],
   },
   {
-    id: "radio",
-    name: "广播站",
-    label: "AI 简报",
-    href: "/daily-brief",
-    desc: "每天一期，把热榜整理成三分钟能听完的要点",
-    x: 21.6,
-    z: -19.6,
-    w: 3.8,
-    d: 3.8,
-    h: 4.6,
-    roof: "tower",
-    accent: "sky",
-    facing: "south",
-    extras: ["antenna"],
-  },
-  {
     id: "bookshop",
     name: "书店",
     label: "技术博客",
     href: "/article",
     desc: "长文与笔记，适合坐下来慢慢读",
-    x: 21.8,
-    z: -11.4,
+    x: 6,
+    z: -16,
     w: 4.6,
     d: 4,
     h: 3.4,
@@ -194,13 +180,29 @@ export const BUILDINGS: BuildingDef[] = [
     extras: ["awning"],
   },
   {
+    id: "radio",
+    name: "广播站",
+    label: "AI 简报",
+    href: "/daily-brief",
+    desc: "每天一期，把热榜整理成三分钟能听完的要点",
+    x: 24,
+    z: -24,
+    w: 3.8,
+    d: 3.8,
+    h: 4.6,
+    roof: "tower",
+    accent: "sky",
+    facing: "south",
+    extras: ["antenna"],
+  },
+  {
     id: "observatory",
     name: "天文台",
     label: "待办分析",
     href: "/user/todo/analysis",
     desc: "用望远镜看七天的完成节奏",
-    x: -24,
-    z: -2.4,
+    x: -27,
+    z: -4,
     w: 3.6,
     d: 3.6,
     h: 3.4,
@@ -215,8 +217,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "网址导航",
     href: "/menus",
     desc: "精选站点收藏夹，本质是一块指路牌",
-    x: -23.8,
-    z: 4.8,
+    x: -27,
+    z: 5,
     w: 3.4,
     d: 3.2,
     h: 2.5,
@@ -231,9 +233,9 @@ export const BUILDINGS: BuildingDef[] = [
     label: "每日热点",
     href: "/daily-hot",
     desc: "八个平台的头版，汇成一页今天的新闻",
-    x: 6.4,
-    z: -1.4,
-    w: 5,
+    x: 6,
+    z: -2,
+    w: 5.2,
     d: 4.4,
     h: 3.8,
     roof: "flat",
@@ -247,8 +249,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "关于与设置",
     href: "/about",
     desc: "站点说明、外观设置与账号，都在门廊后面",
-    x: 6.6,
-    z: 6.2,
+    x: 6,
+    z: 8,
     w: 5.6,
     d: 4.2,
     h: 3.8,
@@ -263,8 +265,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "视觉创作",
     href: "/drawing/create",
     desc: "文字变图片，画廊与我的创作都在里屋",
-    x: 21,
-    z: 1.6,
+    x: 24,
+    z: 2,
     w: 4.8,
     d: 4.4,
     h: 3.6,
@@ -279,8 +281,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "待办清单",
     href: "/user/todo",
     desc: "插满纸条的木板，今天要做的事都在这",
-    x: -11.4,
-    z: 1,
+    x: -12,
+    z: 0,
     w: 3.6,
     d: 3.2,
     h: 2.6,
@@ -290,29 +292,13 @@ export const BUILDINGS: BuildingDef[] = [
     extras: ["board", "awning"],
   },
   {
-    id: "typewriter",
-    name: "打字机铺",
-    label: "AI 写作",
-    href: "/ai/app/writing",
-    desc: "标题、摘要、润色、大纲，文字在这里成形",
-    x: -11.2,
-    z: 17.6,
-    w: 4,
-    d: 3.8,
-    h: 3.1,
-    roof: "gable",
-    accent: "blue",
-    facing: "east",
-    extras: ["chimney"],
-  },
-  {
     id: "cafe",
     name: "咖啡馆",
     label: "赞赏支持",
     href: "/support",
     desc: "如果小镇帮到你，可以请它喝一杯",
-    x: -10.8,
-    z: 24.6,
+    x: -12,
+    z: 20,
     w: 4,
     d: 3.6,
     h: 2.8,
@@ -327,8 +313,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "已安排",
     href: "/scheduled-tasks",
     desc: "到点会亮的日程，都挂在钟面上",
-    x: 6,
-    z: 18.4,
+    x: 7,
+    z: 20,
     w: 3.2,
     d: 3.2,
     h: 8.2,
@@ -336,6 +322,79 @@ export const BUILDINGS: BuildingDef[] = [
     accent: "sun",
     facing: "south",
     extras: ["clock", "flag"],
+  },
+];
+
+/* ------------------------------ 地点附属物 ------------------------------ */
+
+export type AnnexKind =
+  | "shed"
+  | "stall"
+  | "fence"
+  | "table"
+  | "parasol"
+  | "bench"
+  | "planter"
+  | "rack"
+  | "chalkboard"
+  | "barrels"
+  | "well"
+  | "lamp";
+
+export type AnnexDef = {
+  kind: AnnexKind;
+  x: number;
+  z: number;
+  rot?: number;
+  length?: number;
+  accent?: AccentKey;
+};
+
+/** 一个地点 = 主楼 + 这些附属物。目前先做三个院落示范。 */
+export type SiteDef = {
+  id: string;
+  annexes: AnnexDef[];
+};
+
+export const SITES: SiteDef[] = [
+  {
+    id: "cafe",
+    annexes: [
+      { kind: "fence", x: -8.4, z: 21.2, rot: 0, length: 3.4 },
+      { kind: "fence", x: -6.7, z: 22.7, rot: Math.PI / 2, length: 3.2 },
+      { kind: "table", x: -7.8, z: 21 },
+      { kind: "table", x: -7.6, z: 23 },
+      { kind: "table", x: -9.8, z: 23.2 },
+      { kind: "parasol", x: -7.8, z: 21, accent: "coral" },
+      { kind: "parasol", x: -9.8, z: 23.2, accent: "sun" },
+      { kind: "chalkboard", x: -10.4, z: 22.4, rot: -0.4 },
+      { kind: "planter", x: -8.8, z: 19.4, accent: "mint" },
+      { kind: "lamp", x: -6.6, z: 19.8 },
+    ],
+  },
+  {
+    id: "gazette",
+    annexes: [
+      { kind: "shed", x: 10.6, z: -3.2, rot: 0, accent: "coral" },
+      { kind: "fence", x: 2.6, z: 1.2, rot: 0, length: 4 },
+      { kind: "fence", x: 9.4, z: 1.2, rot: 0, length: 4 },
+      { kind: "fence", x: 11.7, z: -1.2, rot: Math.PI / 2, length: 4.4 },
+      { kind: "rack", x: 3.2, z: -0.4, rot: Math.PI / 2 },
+      { kind: "barrels", x: 11.2, z: -6.4, rot: 0.3 },
+      { kind: "well", x: 2.8, z: 2.2 },
+      { kind: "lamp", x: 2.2, z: 3.2 },
+    ],
+  },
+  {
+    id: "bookshop",
+    annexes: [
+      { kind: "stall", x: 10.6, z: -17.6, rot: 0, accent: "mint" },
+      { kind: "bench", x: 2.6, z: -13.8, rot: Math.PI / 2 },
+      { kind: "bench", x: 2.6, z: -18.4, rot: Math.PI / 2 },
+      { kind: "planter", x: 2.2, z: -16.2, accent: "violet" },
+      { kind: "lamp", x: 10.8, z: -13.6 },
+      { kind: "barrels", x: 11, z: -19.8, rot: -0.2 },
+    ],
   },
 ];
 
@@ -356,100 +415,97 @@ export type DecorDef = {
 };
 
 export const DECOR: DecorDef[] = [
-  { id: "house-nw-1", kind: "house", x: -24.4, z: -24, w: 3.2, d: 3, h: 2.4, accent: "mint", roof: "gable" },
-  { id: "house-nw-2", kind: "house", x: -24.4, z: -18.2, w: 3, d: 3, h: 2.2, accent: "sun", roof: "gable" },
-  { id: "house-nw-3", kind: "house", x: -24.4, z: -13, w: 2.8, d: 2.8, h: 2.1, accent: "coral", roof: "gable" },
-  { id: "warehouse", kind: "warehouse", x: 24.2, z: -25.6, w: 5, d: 3.4, h: 3, accent: "sky", roof: "gable" },
-  { id: "house-se-1", kind: "house", x: 24.2, z: 17.4, w: 3.2, d: 3, h: 2.4, accent: "violet", roof: "gable" },
-  { id: "house-se-2", kind: "house", x: 24.2, z: 23.4, w: 3, d: 3, h: 2.2, accent: "mint", roof: "gable" },
-  { id: "house-se-3", kind: "house", x: 18.4, z: 25.2, w: 2.8, d: 2.8, h: 2.1, accent: "sun", roof: "gable" },
-  { id: "watertower", kind: "watertower", x: 26.4, z: 9.6, w: 2.6, d: 2.6, h: 5.4, accent: "sky", roof: "flat" },
+  { id: "house-nw-1", kind: "house", x: -28.4, z: -27.6, w: 3.2, d: 3, h: 2.4, accent: "mint", roof: "gable" },
+  { id: "house-nw-2", kind: "house", x: -28.4, z: -21.2, w: 3, d: 3, h: 2.2, accent: "sun", roof: "gable" },
+  { id: "house-nw-3", kind: "house", x: -28.4, z: -15.4, w: 2.8, d: 2.8, h: 2.1, accent: "coral", roof: "gable" },
+  { id: "warehouse", kind: "warehouse", x: 25.4, z: -14.4, w: 5, d: 3.4, h: 3, accent: "sky", roof: "gable" },
+  { id: "house-se-1", kind: "house", x: 27.2, z: 19.4, w: 3.2, d: 3, h: 2.4, accent: "violet", roof: "gable" },
+  { id: "house-se-2", kind: "house", x: 27.2, z: 25.4, w: 3, d: 3, h: 2.2, accent: "mint", roof: "gable" },
+  { id: "house-se-3", kind: "house", x: 21.2, z: 28.2, w: 2.8, d: 2.8, h: 2.1, accent: "sun", roof: "gable" },
+  { id: "watertower", kind: "watertower", x: 29.6, z: 11.2, w: 2.6, d: 2.6, h: 5.4, accent: "sky", roof: "flat" },
 ];
 
 /* ------------------------------ 街景点位 ------------------------------ */
 
 export const LAMPS: [number, number][] = [
-  [-4.9, -23.4],
-  [-4.7, -14.6],
-  [1.5, -18.6],
-  [-4.4, 3.4],
-  [1.8, -3.6],
-  [-4.2, 14.8],
-  [1.9, 7.4],
-  [-4.1, 25],
-  [-13.4, -6.2],
-  [-6.2, -11.6],
-  [3.4, -6.2],
-  [9.6, -11.6],
-  [-13.6, 9.4],
-  [3.6, 14.4],
-  [-6.2, 14.6],
-  [9.8, 14.4],
+  [-5.4, -27.4],
+  [-5.2, -17.6],
+  [1.4, -22.4],
+  [-5, 2.4],
+  [1.7, -4.6],
+  [-4.8, 16.4],
+  [1.8, 7.4],
+  [-4.6, 28.4],
+  [-15.4, -7.4],
+  [-7.4, -12.6],
+  [3.4, -7.4],
+  [10.4, -12.6],
+  [-15.6, 10.4],
+  [3.6, 16.4],
+  [-7.4, 15.6],
+  [10.8, 16.4],
 ];
 
 export const BENCHES: { x: number; z: number; rot: number }[] = [
-  { x: -1.6, z: -2.6, rot: 0 },
-  { x: -5.9, z: 1.2, rot: Math.PI / 2 },
-  { x: 2.7, z: 1.2, rot: -Math.PI / 2 },
-  { x: -1.6, z: 5, rot: Math.PI },
-  { x: -26.6, z: 18.2, rot: 0.6 },
-  { x: -24.2, z: 14.6, rot: -0.4 },
-  { x: -22.8, z: 26, rot: Math.PI },
-  { x: -19.4, z: 22.2, rot: -1.2 },
-  { x: -19.6, z: 18, rot: 1.4 },
+  { x: -2, z: -2.8, rot: 0 },
+  { x: -6.4, z: 1.2, rot: Math.PI / 2 },
+  { x: 2.8, z: 1.2, rot: -Math.PI / 2 },
+  { x: -2, z: 5.2, rot: Math.PI },
+  { x: -30.2, z: 17.4, rot: 0.6 },
+  { x: -26.2, z: 15.8, rot: -0.4 },
+  { x: -26.4, z: 29.4, rot: Math.PI },
+  { x: -22.4, z: 24.6, rot: -1.2 },
 ];
 
 export const PLANTERS: [number, number][] = [
-  [-4.9, -2],
-  [1.7, -2],
-  [-4.9, 4.4],
-  [1.7, 4.4],
-  [-4.6, -11],
-  [1.8, 13.6],
+  [-5.2, -2.2],
+  [1.8, -2.2],
+  [-5.2, 4.6],
+  [1.8, 4.6],
+  [-5, -12],
+  [1.8, 15.4],
 ];
 
 export const STALLS: { x: number; z: number; accent: AccentKey }[] = [
   { x: -0.2, z: -1.2, accent: "coral" },
   { x: 0.4, z: 2.6, accent: "sun" },
-  { x: -4, z: 3.2, accent: "mint" },
+  { x: -4.2, z: 3.2, accent: "mint" },
 ];
 
 export const PARK_TREES: [number, number, number][] = [
-  [-27.3, 14.2, 1.05],
-  [-27.4, 23.2, 1.1],
-  [-26, 26.6, 0.95],
-  [-21.2, 27, 1],
-  [-18.9, 24.6, 0.9],
-  [-18.9, 18.4, 1.05],
-  [-19.2, 14.4, 0.95],
-  [-23.4, 14, 1],
-];
-
-/** 公园入口石柱 */
-export const PARK_GATES: [number, number][] = [
-  [-19.2, 13.8],
-  [-19.4, 26.2],
+  [-31.4, 15.4, 1.05],
+  [-31.6, 24.6, 1.1],
+  [-30, 30, 0.95],
+  [-24.6, 30.6, 1],
+  [-22.2, 27.4, 0.9],
+  [-22.2, 20.4, 1.05],
+  [-23.4, 15.6, 0.95],
+  [-27.6, 15.2, 1],
 ];
 
 export const STREET_TREES: [number, number, number][] = [
-  [-27.2, -4, 1.05],
-  [-27.2, 1, 1.1],
-  [-27.2, 6.4, 0.95],
-  [15.2, -14.6, 1.05],
-  [15.4, -3, 0.95],
-  [15.2, 4, 1.1],
-  [15.4, 15.4, 1],
-  [-27.2, 9.4, 1],
-  [-5, -27, 0.95],
-  [1.6, -27, 1.05],
-  [-7, 27, 1],
-  [2.6, 27, 1.05],
-  [-17.4, -24.8, 1.05],
-  [25.4, -20.6, 0.95],
-  [25.6, -14.6, 1],
-  [17.6, 9.6, 1.05],
-  [11.4, 23.6, 0.95],
-  [-16.6, 10.4, 1],
+  [-31.4, -6, 1.05],
+  [-31.4, 1, 1.1],
+  [-31.4, 7.4, 0.95],
+  [16.6, -18.6, 1.05],
+  [16.8, -4, 0.95],
+  [16.6, 5, 1.1],
+  [16.8, 18.4, 1],
+  [-31.4, 11.4, 1],
+  [-6, -31, 0.95],
+  [1.6, -31, 1.05],
+  [-8, 31, 1],
+  [2.6, 31, 1.05],
+  [-19.6, -28.6, 1.05],
+  [28.4, -21.6, 0.95],
+  [28.6, -9.6, 1],
+  [19.4, 12.6, 1.05],
+  [12.4, 27.6, 0.95],
+  [-17.6, 12.4, 1],
+  [28.8, 27, 0.95],
+  [-19.4, -18.6, 1],
+  [-19.6, -2.6, 0.9],
+  [12.2, -27.6, 1],
 ];
 
 /* ------------------------------ 生活细节布局 ------------------------------ */
@@ -458,170 +514,174 @@ export type PropSpot = { x: number; z: number; s?: number };
 export type FlowerSpot = { x: number; z: number; accent: AccentKey };
 export type PlacedProp = { x: number; z: number; rot: number; length?: number; accent?: AccentKey };
 
-/** 后院草地：填补街区空地，压住"规划图"的空旷感 */
 export const YARDS: { x: number; z: number; w: number; d: number }[] = [
-  { x: -10.4, z: -25.6, w: 7.4, d: 3.6 },
-  { x: -10.6, z: -14.4, w: 6.4, d: 3.4 },
-  { x: 6.4, z: -25.4, w: 6.2, d: 3.6 },
-  { x: 21.8, z: -25.2, w: 6.4, d: 3.4 },
-  { x: -24.6, z: -7.6, w: 5, d: 4.4 },
-  { x: -24.8, z: 10.4, w: 4.6, d: 3.2 },
-  { x: -11.2, z: -4.4, w: 6.6, d: 4.6 },
-  { x: -11, z: 8.4, w: 6.4, d: 4 },
-  { x: 6.4, z: -8.6, w: 6.4, d: 3.4 },
-  { x: 21.4, z: -5.6, w: 6, d: 4.2 },
-  { x: 21.6, z: 6.8, w: 6.2, d: 4.4 },
-  { x: -11.2, z: 12.4, w: 6, d: 3 },
-  { x: 6.4, z: 9.6, w: 6, d: 3 },
-  { x: 6, z: 24.4, w: 6.4, d: 4 },
-  { x: 17.4, z: 20.4, w: 5.6, d: 4.6 },
+  { x: -12, z: -30.4, w: 7.4, d: 3 },
+  { x: 6.4, z: -30.2, w: 6.4, d: 3.2 },
+  { x: 24, z: -29.8, w: 6.2, d: 3.4 },
+  { x: -27.4, z: -8.8, w: 5, d: 3.4 },
+  { x: -27.4, z: 9.4, w: 4.6, d: 3.2 },
+  { x: -12, z: -8.4, w: 6.6, d: 4.2 },
+  { x: -12, z: 6.4, w: 6.4, d: 4 },
+  { x: 6.4, z: -9, w: 6.4, d: 3.2 },
+  { x: 6.4, z: 3.2, w: 6, d: 3.6 },
+  { x: 24, z: -8.6, w: 6, d: 4.2 },
+  { x: 24, z: 8.4, w: 6.2, d: 4.4 },
+  { x: -12, z: 12.6, w: 6, d: 3 },
+  { x: -12, z: 28, w: 6.4, d: 3.6 },
+  { x: 7, z: 27.4, w: 6, d: 4 },
+  { x: 22.6, z: 24, w: 5.6, d: 4.6 },
 ];
 
 export const BUSHES: PropSpot[] = [
-  { x: -13.6, z: -22.6, s: 1.2 },
-  { x: -13.4, z: -18.2, s: 0.95 },
-  { x: -6.6, z: -22.8, s: 1.1 },
-  { x: -7, z: -16.8, s: 1 },
-  { x: -13.2, z: -12.4, s: 1.15 },
-  { x: -6.8, z: -10.2, s: 0.95 },
-  { x: 3.6, z: -22.8, s: 1.1 },
-  { x: 9, z: -22.6, s: 1 },
-  { x: 3.4, z: -17.6, s: 1.05 },
-  { x: 9.2, z: -17.8, s: 0.95 },
-  { x: 3.4, z: -11.8, s: 1 },
-  { x: 9.2, z: -12.2, s: 1.1 },
-  { x: 19.2, z: -22, s: 1.05 },
-  { x: 24.2, z: -21.8, s: 0.95 },
-  { x: 19, z: -13.6, s: 1.1 },
-  { x: 24.6, z: -13.4, s: 1 },
-  { x: -26.4, z: -21.4, s: 1.05 },
-  { x: -22.2, z: -21.2, s: 0.95 },
-  { x: -26.4, z: -15.6, s: 1 },
-  { x: -22.2, z: -15.4, s: 1.1 },
-  { x: -26.4, z: -10.6, s: 0.95 },
-  { x: -26.6, z: -5.4, s: 1.1 },
-  { x: -21.8, z: -5.2, s: 0.95 },
-  { x: -26.6, z: 2.2, s: 1 },
-  { x: -21.6, z: 2.4, s: 1.15 },
-  { x: -26.6, z: 8.6, s: 1 },
-  { x: -21.8, z: 8.8, s: 0.95 },
-  { x: -14.2, z: -2.6, s: 1.05 },
-  { x: -8.2, z: -2.4, s: 0.95 },
-  { x: -14.2, z: 3.2, s: 1 },
+  { x: -15.8, z: -27.4, s: 1.2 },
+  { x: -15.6, z: -22.6, s: 0.95 },
+  { x: -8.2, z: -27.6, s: 1.1 },
+  { x: -8.4, z: -21.4, s: 1 },
+  { x: -15.4, z: -18.4, s: 1.15 },
+  { x: -8.4, z: -13.2, s: 0.95 },
+  { x: 2.4, z: -27.6, s: 1.1 },
+  { x: 9.8, z: -27.4, s: 1 },
+  { x: 2.2, z: -22.4, s: 1.05 },
+  { x: 10, z: -22.2, s: 0.95 },
+  { x: 2.2, z: -18.6, s: 1 },
+  { x: 10, z: -18.4, s: 1.1 },
+  { x: 20.4, z: -27.6, s: 1.05 },
+  { x: 27.6, z: -27.4, s: 0.95 },
+  { x: 20.2, z: -19.6, s: 1.1 },
+  { x: 28.6, z: -18.4, s: 1 },
+  { x: -30.4, z: -25.4, s: 1.05 },
+  { x: -25.4, z: -25.2, s: 0.95 },
+  { x: -30.4, z: -19.4, s: 1 },
+  { x: -25.4, z: -19.2, s: 1.1 },
+  { x: -30.4, z: -13.4, s: 0.95 },
+  { x: -30.6, z: -6.4, s: 1.1 },
+  { x: -24.2, z: -6.2, s: 0.95 },
+  { x: -30.6, z: 3.2, s: 1 },
+  { x: -24.2, z: 3.4, s: 1.15 },
+  { x: -30.6, z: 8.6, s: 1 },
+  { x: -24.2, z: 8.8, s: 0.95 },
+  { x: -15.8, z: -4.6, s: 1.05 },
+  { x: -8.2, z: -4.4, s: 0.95 },
+  { x: -15.8, z: 3.2, s: 1 },
   { x: -8.4, z: 3.4, s: 1.1 },
-  { x: -14.4, z: 10.6, s: 0.95 },
-  { x: -8.2, z: 10.4, s: 1.05 },
-  { x: -14.2, z: 15.4, s: 1 },
-  { x: -8.4, z: 15.2, s: 1.15 },
-  { x: -14, z: 22.4, s: 1.05 },
-  { x: -8, z: 22.6, s: 0.95 },
-  { x: 3.4, z: -3.8, s: 1.1 },
-  { x: 9.6, z: -3.6, s: 1 },
-  { x: 3.6, z: 3.4, s: 0.95 },
-  { x: 9.8, z: 3.6, s: 1.05 },
-  { x: 3.4, z: 10.6, s: 1 },
-  { x: 9.6, z: 10.8, s: 1.1 },
-  { x: 18.4, z: -2.6, s: 1.05 },
-  { x: 24.4, z: -2.4, s: 0.95 },
-  { x: 18.2, z: 4.6, s: 1 },
-  { x: 24.6, z: 4.8, s: 1.1 },
-  { x: 18.4, z: 12.4, s: 0.95 },
-  { x: 24.4, z: 12.6, s: 1.05 },
-  { x: 3.6, z: 16.4, s: 1.1 },
-  { x: 9.4, z: 16.2, s: 1 },
-  { x: 3.6, z: 22.6, s: 0.95 },
-  { x: 9.4, z: 22.8, s: 1.05 },
-  { x: 18.2, z: 16.6, s: 1 },
-  { x: 25.8, z: 20.4, s: 1.1 },
-  { x: 20.4, z: 26, s: 0.95 },
+  { x: -15.8, z: 10.4, s: 0.95 },
+  { x: -8.2, z: 10.6, s: 1.05 },
+  { x: -15.6, z: 18.4, s: 1 },
+  { x: -8.4, z: 26.6, s: 1.15 },
+  { x: 2.2, z: -4.4, s: 1.1 },
+  { x: 10, z: -4.2, s: 1 },
+  { x: 2.4, z: 3.4, s: 0.95 },
+  { x: 10.2, z: 3.6, s: 1.05 },
+  { x: 2.2, z: 12.6, s: 1 },
+  { x: 10, z: 12.8, s: 1.1 },
+  { x: 20.4, z: -4.2, s: 1.05 },
+  { x: 27.6, z: -4, s: 0.95 },
+  { x: 20.2, z: 5.4, s: 1 },
+  { x: 28.6, z: 5.6, s: 1.1 },
+  { x: 20.4, z: 13.4, s: 0.95 },
+  { x: 27.4, z: 14.4, s: 1.05 },
+  { x: 2.6, z: 18.4, s: 1.1 },
+  { x: 11, z: 18.2, s: 1 },
+  { x: 2.6, z: 25.6, s: 0.95 },
+  { x: 11, z: 25.8, s: 1.05 },
+  { x: 20.4, z: 19.6, s: 1 },
+  { x: 29.2, z: 23.4, s: 1.1 },
+  { x: 16.4, z: 29.4, s: 0.95 },
 ];
 
 export const FLOWERS: FlowerSpot[] = [
-  { x: -5.8, z: -2.2, accent: "coral" },
-  { x: 2.4, z: -2.4, accent: "sun" },
-  { x: -5.9, z: 4.6, accent: "violet" },
-  { x: 2.5, z: 4.8, accent: "mint" },
-  { x: -4.4, z: -11, accent: "sun" },
-  { x: 1.8, z: -11.2, accent: "coral" },
-  { x: -4.6, z: 13.6, accent: "mint" },
-  { x: 1.8, z: 13.8, accent: "violet" },
-  { x: -7.4, z: -20.6, accent: "coral" },
-  { x: -7.2, z: -18.4, accent: "sun" },
-  { x: 3.4, z: -20.6, accent: "violet" },
-  { x: 3.6, z: -18.2, accent: "mint" },
-  { x: 3.4, z: -1.8, accent: "coral" },
-  { x: 3.6, z: 4.2, accent: "sun" },
-  { x: -7.4, z: -1.6, accent: "mint" },
-  { x: -7.2, z: 4.2, accent: "violet" },
-  { x: -7.4, z: 16, accent: "coral" },
-  { x: -7.2, z: 23.6, accent: "sun" },
-  { x: 3.8, z: 18, accent: "mint" },
-  { x: 18.6, z: 1.8, accent: "coral" },
-  { x: 24.4, z: 2, accent: "violet" },
-  { x: -26.2, z: 13.4, accent: "sun" },
-  { x: -22.2, z: 13.6, accent: "coral" },
-  { x: -24.6, z: 24, accent: "mint" },
+  { x: -6.4, z: -2.2, accent: "coral" },
+  { x: 2.6, z: -2.4, accent: "sun" },
+  { x: -6.4, z: 4.8, accent: "violet" },
+  { x: 2.6, z: 5, accent: "mint" },
+  { x: -4.6, z: -12.4, accent: "sun" },
+  { x: 1.8, z: -12.6, accent: "coral" },
+  { x: -4.8, z: 15.6, accent: "mint" },
+  { x: 1.8, z: 15.8, accent: "violet" },
+  { x: -9.2, z: -25.2, accent: "coral" },
+  { x: -9, z: -22.8, accent: "sun" },
+  { x: 3.4, z: -25.2, accent: "violet" },
+  { x: 3.6, z: -22.8, accent: "mint" },
+  { x: 3, z: -1.8, accent: "coral" },
+  { x: 3.2, z: 4.2, accent: "sun" },
+  { x: -9.4, z: -1.6, accent: "mint" },
+  { x: -9.2, z: 4.4, accent: "violet" },
+  { x: -9.4, z: 17.4, accent: "coral" },
+  { x: -8.8, z: 25.6, accent: "sun" },
+  { x: 4.2, z: 22, accent: "mint" },
+  { x: 21, z: 2.2, accent: "coral" },
+  { x: 28, z: 2.4, accent: "violet" },
+  { x: -30.4, z: 14.6, accent: "sun" },
+  { x: -24.6, z: 14.2, accent: "coral" },
+  { x: -28.4, z: 29.4, accent: "mint" },
+  { x: 12.6, z: -14.4, accent: "sun" },
+  { x: 12.8, z: 24.6, accent: "coral" },
 ];
 
 export const FENCES: PlacedProp[] = [
-  { x: -26.1, z: -22.3, rot: 0, length: 2.2 },
-  { x: -22.3, z: -22.3, rot: 0, length: 2.2 },
-  { x: -26, z: -16.5, rot: 0, length: 2 },
-  { x: -22.4, z: -16.5, rot: 0, length: 2 },
-  { x: 22.4, z: 19.1, rot: 0, length: 2.3 },
-  { x: 25.9, z: 19.1, rot: 0, length: 2.3 },
-  { x: 17, z: 23.6, rot: Math.PI / 2, length: 2.4 },
+  { x: -30.1, z: -25.9, rot: 0, length: 2.2 },
+  { x: -26.3, z: -25.9, rot: 0, length: 2.2 },
+  { x: -30, z: -19.5, rot: 0, length: 2 },
+  { x: -26.4, z: -19.5, rot: 0, length: 2 },
+  { x: 25.4, z: 21.1, rot: 0, length: 2.3 },
+  { x: 29.4, z: 21.1, rot: 0, length: 2.3 },
+  { x: 19.8, z: 26.6, rot: Math.PI / 2, length: 2.4 },
 ];
 
 export const BICYCLES: PlacedProp[] = [
-  { x: -13.2, z: -19.8, rot: Math.PI / 2 },
-  { x: 3.3, z: -12.4, rot: 0 },
-  { x: -13, z: 23.4, rot: Math.PI / 2 },
-  { x: 9.8, z: 5, rot: Math.PI / 2 },
-  { x: 16.4, z: 26.4, rot: 0 },
+  { x: -15.6, z: -24.4, rot: Math.PI / 2 },
+  { x: 11.4, z: -14.4, rot: 0 },
+  { x: -15.4, z: 22.4, rot: Math.PI / 2 },
+  { x: 10.4, z: 6, rot: Math.PI / 2 },
+  { x: 19.4, z: 29, rot: 0 },
 ];
 
 export const CLOTHESLINES: PlacedProp[] = [
-  { x: -22.2, z: -19.6, rot: 0, length: 2.8 },
-  { x: 22.2, z: 21.2, rot: 0, length: 2.8 },
-  { x: -20.4, z: -14.6, rot: 0.3, length: 2.4 },
+  { x: -26.4, z: -22.6, rot: 0, length: 2.8 },
+  { x: 25.2, z: 23.2, rot: 0, length: 2.8 },
+  { x: -24.4, z: -17.6, rot: 0.3, length: 2.4 },
 ];
 
 export const BINS: [number, number][] = [
-  [-5.2, 5.6],
-  [2.2, -4.6],
-  [-26, 11.6],
-  [-22.6, 25.2],
-  [-5.4, -12.6],
-  [2.4, 12.4],
-  [14.6, 9.4],
+  [-5.6, 5.8],
+  [2.4, -5.6],
+  [-30, 12.6],
+  [-25.8, 28.4],
+  [-5.8, -14.4],
+  [2.6, 13.4],
+  [16.6, 10.4],
 ];
 
 export const CRATES: PlacedProp[] = [
-  { x: 21.4, z: -22.6, rot: 0.32 },
-  { x: -14, z: -23.8, rot: -0.2 },
-  { x: 23.4, z: 14.2, rot: 0.5 },
+  { x: 22.4, z: -25.4, rot: 0.32 },
+  { x: -16, z: -28.6, rot: -0.2 },
+  { x: 26.4, z: 16.4, rot: 0.5 },
 ];
 
 export const POTS: { x: number; z: number; accent: AccentKey }[] = [
-  { x: -7.2, z: -21, accent: "coral" },
-  { x: 3.4, z: -21, accent: "sun" },
-  { x: -7, z: -11.8, accent: "violet" },
-  { x: 3.4, z: -11.8, accent: "mint" },
-  { x: -7, z: 26.4, accent: "coral" },
-  { x: 3.6, z: 10.4, accent: "sun" },
-  { x: 14.4, z: -13.6, accent: "mint" },
+  { x: -9.4, z: -26, accent: "coral" },
+  { x: 3.4, z: -26, accent: "sun" },
+  { x: -9.2, z: -14.6, accent: "violet" },
+  { x: 3.4, z: -14.6, accent: "mint" },
+  { x: -9, z: 28.6, accent: "coral" },
+  { x: 3.8, z: 12.6, accent: "sun" },
+  { x: 17.4, z: -16.4, accent: "mint" },
 ];
 
 export const BARRELS: { x: number; z: number }[] = [
-  { x: -13.4, z: -21.4 },
-  { x: -7.4, z: 26.4 },
-  { x: 22.6, z: -18.2 },
+  { x: -15.8, z: -25.8 },
+  { x: -9, z: 29.4 },
+  { x: 28.4, z: -21 },
 ];
 
 export const SIGNPOSTS: PlacedProp[] = [
-  { x: -5.6, z: -6.4, rot: -0.3 },
-  { x: 2.8, z: 14.2, rot: 0.4 },
+  { x: -6.2, z: -7.6, rot: -0.3 },
+  { x: 3, z: 17.4, rot: 0.4 },
+];
+
+export const PARK_GATES: [number, number][] = [
+  [-22.9, 15.2],
+  [-22.9, 29.8],
 ];
 
 export function buildingById(id: string): BuildingDef | undefined {

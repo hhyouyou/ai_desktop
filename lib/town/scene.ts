@@ -25,6 +25,7 @@ import {
   POND,
   POTS,
   SIGNPOSTS,
+  SITES,
   STALLS,
   STREET_TREES,
   STREETS,
@@ -52,6 +53,7 @@ import {
   type BuildingHandle,
 } from "./build";
 import { disposeSharedMaterials } from "./materials";
+import { createAnnex } from "./site";
 import {
   createBarrel,
   createBicycle,
@@ -109,7 +111,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     const w = container.clientWidth;
     const h = container.clientHeight;
     const aspect = w / Math.max(h, 1);
-    const halfHeight = Math.max(28, 44 / aspect);
+    const halfHeight = Math.max(31, 50 / aspect);
     camera.left = -halfHeight * aspect;
     camera.right = halfHeight * aspect;
     camera.top = halfHeight;
@@ -124,15 +126,15 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(hemisphere);
 
   const sun = new THREE.DirectionalLight(0xfff2d8, 2.1);
-  sun.position.set(40, 60, 28);
+  sun.position.set(48, 70, 32);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -44;
-  sun.shadow.camera.right = 44;
-  sun.shadow.camera.top = 44;
-  sun.shadow.camera.bottom = -44;
+  sun.shadow.camera.left = -50;
+  sun.shadow.camera.right = 50;
+  sun.shadow.camera.top = 50;
+  sun.shadow.camera.bottom = -50;
   sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 150;
+  sun.shadow.camera.far = 180;
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.045;
   scene.add(sun);
@@ -157,14 +159,14 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
 
   // 两个主路口各铺四条斑马线
   const crossings: [number, number, number, "x" | "z"][] = [
-    [-1.9, -11.6, 5.4, "x"],
-    [-1.9, -6.6, 5.4, "x"],
-    [-6.2, -9.1, 4.2, "z"],
-    [2.4, -9.1, 4.2, "z"],
-    [-1.6, 9.9, 5.4, "x"],
-    [-1.6, 14.6, 5.4, "x"],
-    [-6, 12.2, 4.2, "z"],
-    [2.6, 12.2, 4.2, "z"],
+    [-2, -13, 5.6, "x"],
+    [-2, -7, 5.6, "x"],
+    [-7, -10, 4.2, "z"],
+    [3.2, -10, 4.2, "z"],
+    [-2, 9, 5.6, "x"],
+    [-2, 15.8, 5.6, "x"],
+    [-7, 12.2, 4.2, "z"],
+    [3.2, 12.2, 4.2, "z"],
   ];
   crossings.forEach(([x, z, span, along]) => {
     scene.add(createCrosswalk(x, z, span, along));
@@ -175,6 +177,12 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
 
   DECOR.forEach((item) => {
     scene.add(createDecorBuilding(item));
+  });
+
+  SITES.forEach((site) => {
+    site.annexes.forEach((annex) => {
+      scene.add(createAnnex(annex));
+    });
   });
 
   const handles = new Map<string, BuildingHandle>();
@@ -200,7 +208,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   BENCHES.forEach((bench) => scene.add(createBench(bench.x, bench.z, bench.rot)));
   PLANTERS.forEach(([x, z]) => scene.add(createPlanter(x, z)));
   STALLS.forEach((stall) => scene.add(createStall(stall.x, stall.z, stall.accent)));
-  scene.add(createMailbox(2.6, -5.4));
+  scene.add(createMailbox(3, -5.6));
 
   // 绿植：手动点位 + 每块草地四角自动补灌木
   const yardBushes: { x: number; z: number; s: number }[] = [];
@@ -274,13 +282,22 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     { x: PLAZA.x, z: PLAZA.z, r: 1.45 },
     { x: POND.x, z: POND.z, r: Math.max(POND.rx, POND.rz) + 0.35 },
     ...STALLS.map((s) => ({ x: s.x, z: s.z, r: 1.15 })),
+    ...SITES.flatMap((site) =>
+      site.annexes
+        .filter((annex) => annex.kind === "shed" || annex.kind === "well" || annex.kind === "stall")
+        .map((annex) => ({
+          x: annex.x,
+          z: annex.z,
+          r: annex.kind === "shed" ? 2.2 : annex.kind === "stall" ? 1.5 : 1.1,
+        })),
+    ),
   ]);
 
   const character = createCharacter();
   character.scale.setScalar(1.22);
   const actor = {
     group: character,
-    pos: new THREE.Vector3(-1.8, 0, 7.6),
+    pos: new THREE.Vector3(-2, 0, 7.8),
     facing: Math.PI,
     path: [] as Point[],
     targetId: null as string | null,
