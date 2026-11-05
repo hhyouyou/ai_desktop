@@ -6,9 +6,12 @@
 import * as THREE from "three";
 import {
   ACCENT,
+  GAZEBO,
   PAPER,
   PARK,
+  PARK_GATES,
   PLAZA,
+  POND,
   type AccentKey,
   type BuildingDef,
   type DecorDef,
@@ -630,46 +633,173 @@ export function createCrosswalk(cx: number, cz: number, span: number, along: "x"
 
 /* ------------------------------ 公园 ------------------------------ */
 
+function seeded(index: number): number {
+  const value = Math.sin(index * 12.9898 + 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function walkSegment(x1: number, z1: number, x2: number, z2: number, width = 1.3): THREE.Mesh {
+  const dx = x2 - x1;
+  const dz = z2 - z1;
+  const length = Math.hypot(dx, dz);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 0.05, length), toon(0xe9dfc9));
+  mesh.position.set((x1 + x2) / 2, 0.17, (z1 + z2) / 2);
+  mesh.rotation.y = Math.atan2(dx, dz);
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function createGazebo(radius: number): THREE.Group {
+  const group = new THREE.Group();
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.26, 6), toon(PAPER.plaza));
+  base.position.y = 0.13;
+  shadowed(base);
+  group.add(base);
+
+  for (let i = 0; i < 6; i += 1) {
+    const angle = (i / 6) * Math.PI * 2;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 2.1, 8), toon(PAPER.wall));
+    post.position.set(Math.cos(angle) * radius * 0.8, 1.31, Math.sin(angle) * radius * 0.8);
+    shadowed(post);
+    group.add(post);
+  }
+
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.96, radius * 0.96, 0.1, 6), toon(PAPER.wallSide));
+  ring.position.y = 2.4;
+  group.add(ring);
+
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(radius * 1.24, 0.95, 6), toon(0xd9603c));
+  roof.position.y = 2.92;
+  shadowed(roof);
+  group.add(roof);
+
+  const finial = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), flat(0xf4d98a));
+  finial.position.y = 3.46;
+  group.add(finial);
+
+  return group;
+}
+
+function createFlowerBed(w: number, d: number, seed: number): THREE.Group {
+  const group = new THREE.Group();
+
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.3, d), toon(PAPER.trunk));
+  frame.position.y = 0.15;
+  shadowed(frame);
+  group.add(frame);
+
+  const soil = new THREE.Mesh(new THREE.BoxGeometry(w - 0.22, 0.06, d - 0.22), toon(0x6b5540));
+  soil.position.y = 0.32;
+  group.add(soil);
+
+  const colors = [0xd9603c, 0xe0a23a, 0xd97fae, 0x7b63c4, 0x3d9e7d];
+  const count = Math.max(4, Math.round(w * d * 2.4));
+  for (let i = 0; i < count; i += 1) {
+    const flower = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.1, 0),
+      toon(colors[(i + seed) % colors.length]),
+    );
+    flower.position.set(
+      (seeded(seed + i) - 0.5) * (w - 0.5),
+      0.4,
+      (seeded(seed + i + 40) - 0.5) * (d - 0.5),
+    );
+    group.add(flower);
+  }
+
+  return group;
+}
+
+function createGatePost(): THREE.Group {
+  const group = new THREE.Group();
+
+  const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.5, 0.34), toon(PAPER.wall)));
+  post.position.y = 0.75;
+  group.add(post);
+
+  const cap = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.46), toon(PAPER.roofSide)));
+  cap.position.y = 1.56;
+  group.add(cap);
+
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), toon(PAPER.plazaEdge));
+  ball.position.y = 1.72;
+  group.add(ball);
+
+  return group;
+}
+
 export function createPark(): THREE.Group {
   const group = new THREE.Group();
   group.position.set(PARK.x, 0, PARK.z);
 
-  const lawn = new THREE.Mesh(new THREE.BoxGeometry(PARK.w, 0.14, PARK.d), toon(PAPER.grass));
-  lawn.position.y = 0.07;
-  lawn.receiveShadow = true;
-  group.add(lawn);
-
-  const border = new THREE.Mesh(new THREE.BoxGeometry(PARK.w + 0.5, 0.1, PARK.d + 0.5), toon(PAPER.grassDark));
-  border.position.y = 0.03;
+  const border = new THREE.Mesh(new THREE.BoxGeometry(PARK.w + 0.7, 0.12, PARK.d + 0.7), toon(PAPER.grassDark));
+  border.position.y = 0.04;
   border.receiveShadow = true;
   group.add(border);
 
-  const pathA = new THREE.Mesh(new THREE.BoxGeometry(PARK.w - 0.3, 0.04, 0.9), toon(PAPER.sidewalk));
-  pathA.position.set(0, 0.16, 1.9);
-  pathA.receiveShadow = true;
-  group.add(pathA);
+  const lawn = new THREE.Mesh(new THREE.BoxGeometry(PARK.w, 0.14, PARK.d), toon(0xb2c885));
+  lawn.position.y = 0.08;
+  lawn.receiveShadow = true;
+  group.add(lawn);
 
-  const pathB = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, PARK.d - 0.3), toon(PAPER.sidewalk));
-  pathB.position.set(1.5, 0.16, 0);
-  pathB.receiveShadow = true;
-  group.add(pathB);
+  const pondX = POND.x - PARK.x;
+  const pondZ = POND.z - PARK.z;
+  const gazeboX = GAZEBO.x - PARK.x;
+  const gazeboZ = GAZEBO.z - PARK.z;
 
-  const pondRim = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.5, 0.24, 28), toon(PAPER.plazaEdge));
-  pondRim.position.set(-0.6, 0.2, -1.8);
-  pondRim.receiveShadow = true;
-  group.add(pondRim);
+  group.add(walkSegment(4.3, 6.7, 0.9, 2.4));
+  group.add(walkSegment(0.9, 2.4, pondX + 0.4, pondZ + 1.9));
+  group.add(walkSegment(pondX + 0.4, pondZ + 1.9, pondX - 0.7, pondZ - 1.8));
+  group.add(walkSegment(0.9, 2.4, gazeboX, gazeboZ - 1.6));
 
-  const pond = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.28, 1.28, 0.1, 28),
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.28, 32), toon(PAPER.plazaEdge));
+  rim.scale.set(POND.rx + 0.26, 1, POND.rz + 0.26);
+  rim.position.set(pondX, 0.14, pondZ);
+  rim.receiveShadow = true;
+  group.add(rim);
+
+  const water = new THREE.Mesh(
+    new THREE.CylinderGeometry(1, 1, 0.1, 32),
     new THREE.MeshToonMaterial({ color: PAPER.water, gradientMap: getGradientMap() }),
   );
-  pond.position.set(-0.6, 0.33, -1.8);
-  group.add(pond);
+  water.scale.set(POND.rx, 1, POND.rz);
+  water.position.set(pondX, 0.28, pondZ);
+  group.add(water);
 
-  const lily = new THREE.Mesh(new THREE.CircleGeometry(0.22, 10), toon(PAPER.leaf));
-  lily.rotation.x = -Math.PI / 2;
-  lily.position.set(-0.15, 0.39, -1.5);
-  group.add(lily);
+  [
+    [0.5, -0.4],
+    [-0.8, 0.5],
+    [0.9, 0.7],
+    [-0.3, -0.9],
+  ].forEach(([ox, oz]) => {
+    const lily = new THREE.Mesh(new THREE.CircleGeometry(0.24, 10), toon(PAPER.leaf));
+    lily.rotation.x = -Math.PI / 2;
+    lily.position.set(pondX + ox, 0.34, pondZ + oz);
+    group.add(lily);
+  });
+
+  const gazebo = createGazebo(GAZEBO.radius);
+  gazebo.position.set(gazeboX, 0.15, gazeboZ);
+  group.add(gazebo);
+
+  [
+    { x: -5.6, z: 1.4, w: 2.4, d: 0.9 },
+    { x: 3.6, z: -1.8, w: 0.9, d: 2.4 },
+    { x: -1.6, z: 5.8, w: 2.6, d: 0.9 },
+    { x: 1.9, z: -4.4, w: 0.9, d: 2.2 },
+    { x: -4, z: 4.8, w: 2, d: 0.9 },
+  ].forEach((bed, index) => {
+    const flowerBed = createFlowerBed(bed.w, bed.d, index * 7);
+    flowerBed.position.set(bed.x, 0.15, bed.z);
+    group.add(flowerBed);
+  });
+
+  PARK_GATES.forEach(([x, z]) => {
+    const gate = createGatePost();
+    gate.position.set(x - PARK.x, 0.15, z - PARK.z);
+    group.add(gate);
+  });
 
   return group;
 }

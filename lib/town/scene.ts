@@ -22,6 +22,7 @@ import {
   PATHS,
   PLANTERS,
   PLAZA,
+  POND,
   POTS,
   SIGNPOSTS,
   STALLS,
@@ -271,7 +272,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     ...BUILDINGS.map((b) => ({ x: b.x, z: b.z, r: Math.max(b.w, b.d) * 0.62 + 0.55 })),
     ...DECOR.map((d) => ({ x: d.x, z: d.z, r: Math.max(d.w, d.d) * 0.62 + 0.45 })),
     { x: PLAZA.x, z: PLAZA.z, r: 1.45 },
-    { x: PARK.x - 0.6, z: PARK.z - 1.8, r: 1.55 },
+    { x: POND.x, z: POND.z, r: Math.max(POND.rx, POND.rz) + 0.35 },
     ...STALLS.map((s) => ({ x: s.x, z: s.z, r: 1.15 })),
   ]);
 

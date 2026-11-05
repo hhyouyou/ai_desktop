@@ -114,8 +114,14 @@ export const PATHS: { x1: number; z1: number; x2: number; z2: number; width?: nu
 /** 市集广场：主街中段的圆形空地 */
 export const PLAZA = { x: -1.6, z: 1.2, radius: 5.1 } as const;
 
-/** 公园：西南角的绿地 */
-export const PARK = { x: -24.2, z: 20.6, w: 6.4, d: 12.8 } as const;
+/** 公园：西南角的大片绿地 */
+export const PARK = { x: -23.2, z: 20.4, w: 9.4, d: 14.6 } as const;
+
+/** 公园里的池塘（世界坐标，相对公园中心的偏移也与之一致） */
+export const POND = { x: -25.3, z: 16.8, rx: 2.3, rz: 1.75 } as const;
+
+/** 凉亭 */
+export const GAZEBO = { x: -21.4, z: 23.8, radius: 1.8 } as const;
 
 /** 地块半径 */
 export const TOWN_SIZE = 28;
@@ -386,10 +392,11 @@ export const BENCHES: { x: number; z: number; rot: number }[] = [
   { x: -5.9, z: 1.2, rot: Math.PI / 2 },
   { x: 2.7, z: 1.2, rot: -Math.PI / 2 },
   { x: -1.6, z: 5, rot: Math.PI },
-  { x: -26, z: 15.6, rot: Math.PI / 2 },
-  { x: -22.2, z: 15.6, rot: Math.PI / 2 },
-  { x: -26.4, z: 23.6, rot: -Math.PI / 2 },
-  { x: -22, z: 22.6, rot: 0 },
+  { x: -26.6, z: 18.2, rot: 0.6 },
+  { x: -24.2, z: 14.6, rot: -0.4 },
+  { x: -22.8, z: 26, rot: Math.PI },
+  { x: -19.4, z: 22.2, rot: -1.2 },
+  { x: -19.6, z: 18, rot: 1.4 },
 ];
 
 export const PLANTERS: [number, number][] = [
@@ -408,12 +415,20 @@ export const STALLS: { x: number; z: number; accent: AccentKey }[] = [
 ];
 
 export const PARK_TREES: [number, number, number][] = [
-  [-26.4, 14.8, 1],
-  [-22.4, 14.4, 0.9],
-  [-26.6, 20.8, 1.1],
-  [-22.2, 23.4, 0.95],
-  [-25.2, 26, 1.05],
-  [-26.2, 23.2, 0.85],
+  [-27.3, 14.2, 1.05],
+  [-27.4, 23.2, 1.1],
+  [-26, 26.6, 0.95],
+  [-21.2, 27, 1],
+  [-18.9, 24.6, 0.9],
+  [-18.9, 18.4, 1.05],
+  [-19.2, 14.4, 0.95],
+  [-23.4, 14, 1],
+];
+
+/** 公园入口石柱 */
+export const PARK_GATES: [number, number][] = [
+  [-19.2, 13.8],
+  [-19.4, 26.2],
 ];
 
 export const STREET_TREES: [number, number, number][] = [
