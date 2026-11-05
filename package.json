@@ -1,0 +1,38 @@
+{
+  "name": "blockset",
+  "version": "0.1.0",
+  "private": true,
+  "description": "块集 BlockSet — 工具箱、AI 助手与每日热点",
+  "scripts": {
+    "dev": "next dev -p 4310",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev -p 4310",
+    "build": "next build",
+    "start": "next start -p 4310",
+    "typecheck": "tsc --noEmit",
+    "db:reset": "node scripts/reset-db.mjs",
+    "hot:install": "npm --prefix vendor/hot-service install",
+    "hot:start": "node vendor/hot-service/server.mjs",
+    "brief:gen": "node scripts/brief-cron.mjs",
+    "brief:task": "powershell -ExecutionPolicy Bypass -File scripts/install-brief-task.ps1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "marked": "^18.1.1",
+    "next": "16.4.2",
+    "qrcode": "^1.5.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "spark-md5": "^3.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.5",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0"
+  }
+}

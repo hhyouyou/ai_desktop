@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>块集 · 平铺工作台</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;background:#0f1215;color:#d7dee6;font-family:"Cascadia Code","JetBrains Mono",Consolas,"PingFang SC",monospace;font-size:12px}
+.tbar{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-bottom:1px solid #23292f;background:#12161a;font-size:11.5px}
+.tbar .brand{color:#ffb454;font-weight:700;letter-spacing:.02em}
+.tbar .brand span{color:#5b6874;font-weight:400}
+.tabs{display:flex;gap:6px;margin-left:14px}
+.tab{padding:4px 10px;border:1px solid #23292f;color:#8b98a5;border-radius:3px}
+.tab.on{background:#1b222a;color:#e6edf3;border-color:#2f3944}
+.tbar .right{margin-left:auto;display:flex;gap:14px;color:#5b6874}
+.tbar .right b{color:#9fb0c0;font-weight:500}
+.grid{height:calc(100vh - 40px - 26px);display:grid;grid-template-columns:1.25fr .75fr;grid-template-rows:1fr 1fr;gap:2px;background:#23292f;padding:2px}
+.pane{background:#12161a;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.pane-head{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #23292f;background:#151a1f;font-size:11px;color:#8b98a5}
+.pane-head .idx{color:#ffb454}
+.pane-head .t{color:#d7dee6;letter-spacing:.04em}
+.pane-head .meta{margin-left:auto;color:#5b6874;font-size:10.5px}
+.pane-body{padding:12px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column}
+.pane-sub{margin:14px 0 8px;font-size:10px;letter-spacing:.12em;color:#5b6874}
+.recent{display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:#8b98a5}
+.recent span{display:flex;justify-content:space-between;border-bottom:1px dashed #1f262d;padding-bottom:6px}
+.tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tool{padding:12px;min-height:64px;background:#151a1f;border:1px solid #23292f;display:flex;flex-direction:column;gap:3px;justify-content:center}
+.tool-name{color:#e6edf3;font-size:12px}
+.tool-hint{color:#5b6874;font-size:10.5px}
+.chat{display:flex;flex-direction:column;gap:8px;height:100%}
+.msg{font-size:11.5px;line-height:1.7;color:#b8c4d0}
+.msg .k{color:#ffb454}
+.msg.me .k{color:#7dd3fc}
+.msg .b{color:#e6edf3}
+.msg .lbl{color:#5b6874;font-size:10px}
+.composer{margin-top:auto;border:1px solid #23292f;background:#0d1114;padding:7px 9px;color:#4b5762;display:flex;justify-content:space-between}
+.composer kbd{color:#8b98a5;border:1px solid #23292f;padding:0 4px;border-radius:2px;font-size:10px}
+.todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.todo li{display:flex;gap:8px;align-items:flex-start;line-height:1.5;color:#b8c4d0}
+.todo .box{width:12px;height:12px;border:1px solid #3a4652;margin-top:3px;flex-shrink:0;text-align:center;line-height:10px;font-size:9px;color:#0f1215}
+.todo li.done .box{background:#6ee7a8;border-color:#6ee7a8}
+.todo li.done{color:#5b6874;text-decoration:line-through}
+.todo .add{color:#4b5762;border-top:1px dashed #23292f;padding-top:8px;margin-top:4px}
+.hot{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.hot li{display:grid;grid-template-columns:18px 1fr auto;gap:8px;color:#b8c4d0;line-height:1.4}
+.hot .n{color:#ffb454;font-size:10.5px}
+.hot .h{color:#5b6874;font-size:10px}
+.statusbar{height:26px;display:flex;align-items:center;gap:16px;padding:0 12px;border-top:1px solid #23292f;background:#12161a;color:#5b6874;font-size:10.5px}
+.statusbar .acc{color:#ffb454}
+.statusbar .right{margin-left:auto;display:flex;gap:14px}
+@media (max-width:900px){.grid{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)}.slogan{display:none}}
+</style></head>
+<body>
+  <header class="tbar">
+    <span class="brand">◧ 块集 <span>blockset</span></span>
+    <nav class="tabs"><span class="tab on">工作台</span><span class="tab">工具</span><span class="tab">AI</span><span class="tab">待办</span><span class="tab">热点</span></nav>
+    <div class="right"><span><b>09:41</b> 周二</span><span>⌘K 命令</span><span>Q</span></div>
+  </header>
+  <main class="grid">
+    <section class="pane">
+      <div class="pane-head"><span class="idx">01</span><span class="t">TOOLS</span><span class="meta">14 款 · 全部本地运行</span></div>
+      <div class="pane-body">
+        <div class="tool-grid">
+          <div class="tool"><span class="tool-name">图片压缩</span><span class="tool-hint">本地处理</span></div><div class="tool"><span class="tool-name">JSON 格式化</span><span class="tool-hint">开发</span></div><div class="tool"><span class="tool-name">二维码生成</span><span class="tool-hint">Wi-Fi / 名片</span></div><div class="tool"><span class="tool-name">密码生成</span><span class="tool-hint">密码学随机</span></div><div class="tool"><span class="tool-name">九宫格切图</span><span class="tool-hint">3×3</span></div><div class="tool"><span class="tool-name">文本对比</span><span class="tool-hint">diff</span></div>
+        </div>
+        <p class="pane-sub">最近使用</p>
+        <div class="recent">
+          <span><b>图片压缩</b> 2 分钟前</span>
+          <span><b>JSON 格式化</b> 今天 09:12</span>
+          <span><b>二维码生成</b> 昨天</span>
+        </div>
+      </div>
+    </section>
+    <section class="pane">
+      <div class="pane-head"><span class="idx">02</span><span class="t">AI CHAT</span><span class="meta">deepseek-chat · 3 个会话</span></div>
+      <div class="pane-body">
+        <div class="chat">
+          <p class="msg me"><span class="lbl">you</span><br/><span class="k">›</span> <span class="b">把今天的搜索记录整理成三个待办</span></p>
+          <p class="msg"><span class="lbl">assistant</span><br/><span class="k">›</span> <span class="b">① 回复合作邮件 ② 提交周报 ③ 复查压缩工具边界</span></p>
+          <p class="msg me"><span class="lbl">you</span><br/><span class="k">›</span> <span class="b">第 2 条拆成子任务</span></p>
+          <div class="composer"><span>继续追问…</span><kbd>↵</kbd></div>
+        </div>
+      </div>
+    </section>
+    <section class="pane">
+      <div class="pane-head"><span class="idx">03</span><span class="t">TODOS</span><span class="meta">今天 2/5</span></div>
+      <div class="pane-body">
+        <ul class="todo"><li class="done "><span class="box">✓</span><span class="todo-text">回复合作邮件</span></li><li class="done "><span class="box">✓</span><span class="todo-text">提交周报草稿</span></li><li class=" "><span class="box"></span><span class="todo-text">复查图片压缩的边界情况</span></li><li class=" "><span class="box"></span><span class="todo-text">把热榜接进 AI 简报</span></li><li class=" "><span class="box"></span><span class="todo-text">给工具页补移动端断点</span></li><li><span class="box"></span><span>整理本周热榜到简报</span></li><li><span class="box"></span><span>把 AI 会话导出成 Markdown</span></li></ul>
+      </div>
+    </section>
+    <section class="pane">
+      <div class="pane-head"><span class="idx">04</span><span class="t">DAILY HOT</span><span class="meta">实时 8/8 · 11:29 刷新</span></div>
+      <div class="pane-body">
+        <ul class="hot"><li><span class="n">01</span><span>女子每天 2 杯咖啡打喷嚏震断肋骨</span><span class="h">128.4 万</span></li><li><span class="n">02</span><span>LPL 四队承包 S16 瑞士轮前四场</span><span class="h">96.1 万</span></li><li><span class="n">03</span><span>何以中国 当惊世界殊</span><span class="h">74.2 万</span></li><li><span class="n">04</span><span>晚 8 点天猫 iPhone 18 Pro 历史最低价</span><span class="h">61.8 万</span></li><li><span class="n">05</span><span>AI 编程工具正在重写小团队的分工</span><span class="h">52.3 万</span></li><li><span class="n">06</span><span>把热榜接进 AI 简报的第一版</span><span class="h">48.6 万</span></li></ul>
+      </div>
+    </section>
+  </main>
+  <footer class="statusbar"><span class="acc">● 本地模式</span><span>工具在浏览器运行，文件不上传</span><span class="right"><span>hot 8/8</span><span>ai demo</span><span>todo 5</span><span>v0.2</span></span></footer>
+</body></html>

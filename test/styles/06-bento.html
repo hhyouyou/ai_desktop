@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>块集 BlockSet · undefined</title>
+<style>/* ===== 06 Bento 现代：浅灰白、卡片栅格、靛蓝单强调 ===== */
+:root{--bg:#f6f6f3;--surface:#fff;--ink:#14161a;--muted:#6d737c;--line:#e7e7e2;--accent:#4f46e5;--accent-soft:#eef0ff;
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 28px rgba(16,24,40,.06)}
+*{box-sizing:border-box}
+body.page{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.hdr{max-width:1100px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:650;text-decoration:none;color:var(--ink);letter-spacing:-.01em}
+.brand::before{content:"";width:24px;height:24px;border-radius:7px;background:var(--accent);box-shadow:inset 0 -6px 0 rgba(255,255,255,.25)}
+.brand-en{font-size:9px;letter-spacing:.1em;color:var(--muted);font-weight:500}
+.nav{margin-left:auto;display:flex;gap:4px}
+.nav a{text-decoration:none;color:var(--muted);font-size:13.5px;padding:8px 13px;border-radius:9px}
+.nav a:hover{background:#ececea;color:var(--ink)}
+.hdr-cta{text-decoration:none;font-size:13.5px;font-weight:600;color:#fff;background:var(--ink);padding:9px 16px;border-radius:10px}
+main{max-width:1100px;margin:0 auto;padding:0 24px 40px}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;grid-template-areas:"kick stats" "head stats" "lede stats" "actions stats";column-gap:44px;align-items:start;padding:56px 0 44px}
+.kicker{grid-area:kick;display:inline-flex;align-items:center;gap:6px;justify-self:start;font-size:12px;color:var(--accent);background:var(--accent-soft);padding:5px 11px;border-radius:8px;margin:0 0 16px;font-weight:600}
+.kicker::before{content:"●";font-size:7px}
+.headline{grid-area:head;margin:0;font-size:clamp(34px,4.2vw,48px);line-height:1.2;letter-spacing:-.03em;font-weight:700}
+.lede{grid-area:lede;color:var(--muted);font-size:14.5px;max-width:32em;margin:18px 0 0}
+.actions{grid-area:actions;display:flex;gap:10px;margin-top:26px}
+.btn{text-decoration:none;font-size:14px;font-weight:600;padding:11px 20px;border-radius:11px;background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-ghost{background:transparent;box-shadow:none}
+.stats{grid-area:stats;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-self:center;margin:0}
+.stats div:first-child{grid-column:span 2}
+.stats div{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.stats dt{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.stats dd{margin:2px 0 0;font-size:11.5px;color:var(--muted)}
+.block{margin-bottom:18px}
+.sec-head{display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px}
+.sec-head h2{font-size:15px;font-weight:650;margin:0;letter-spacing:-.01em}
+.sec-more{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
+.tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tool.bento{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--shadow);transition:.18s}
+.tool.bento:hover{transform:translateY(-2px);border-color:#d6d6cf}
+.tool-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tool-idx{width:26px;height:26px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:700}
+.tool-tag{font-size:10.5px;color:var(--muted);border:1px solid var(--line);padding:2px 7px;border-radius:999px}
+.tool-name{margin:0;font-size:15px;font-weight:650}
+.tool-desc{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.tool-go{margin-top:8px;font-size:11.5px;color:var(--accent);font-weight:600}
+.ai{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.ai-copy h2{font-size:22px;margin:0 0 8px;letter-spacing:-.02em}
+.ai-desc{color:var(--muted);font-size:13px;margin:0 0 18px}
+.ai-chat{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.bubble{font-size:12.5px;padding:10px 13px;border-radius:12px;line-height:1.6;max-width:90%}
+.bubble.user{background:var(--accent);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+.bubble.ai{background:#f4f4f1;border-bottom-left-radius:4px;align-self:flex-start}
+.hot{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px 22px;box-shadow:var(--shadow)}
+.hot-list{list-style:none;margin:0;padding:0}
+.hot-row{display:grid;grid-template-columns:26px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.hot-row:last-child{border-bottom:0}
+.hot-rank{width:20px;height:20px;border-radius:6px;background:#f1f1ee;color:var(--muted);font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.hot-row:nth-child(-n+3) .hot-rank{background:var(--accent-soft);color:var(--accent)}
+.hot-heat{font-size:11.5px;color:var(--muted)}
+.hot-note{margin:12px 0 0;font-size:11px;color:var(--muted)}
+.ftr{max-width:1100px;margin:0 auto;padding:24px;display:flex;gap:20px;font-size:11.5px;color:var(--muted)}
+.ftr-note{margin-left:auto}
+@media (max-width:860px){.nav{display:none}.hero{grid-template-columns:1fr;grid-template-areas:"kick" "head" "lede" "actions" "stats";padding:36px 0}.stats{grid-template-columns:repeat(3,1fr)}.stats div:first-child{grid-column:span 1}.tool-grid{grid-template-columns:1fr 1fr}.ai{grid-template-columns:1fr}}</style>
+</head>
+<body class="page">
+  <header class="hdr">
+    <a class="brand" href="#">块集<span class="brand-en">BLOCKSET</span></a>
+    <nav class="nav"><a href="#">工具箱</a><a href="#">AI 助手</a><a href="#">每日热点</a><a href="#">博客</a></nav>
+    <a class="hdr-cta" href="#">开始使用</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="kicker">NEW · 14 款工具已就位</p>
+      <h1 class="headline">把重复的小事<br />做成能用的工具</h1>
+      <p class="lede">图片压缩、JSON 格式化、二维码、密码生成——在浏览器本地完成，文件不上传。再加 AI 对话、每日热点与待办清单。</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#">开始用工具</a>
+        <a class="btn btn-ghost" href="#">打开 AI 对话</a>
+      </div>
+      <dl class="stats">
+        <div><dt>14</dt><dd>款即用工具</dd></div>
+        <div><dt>8</dt><dd>个热点来源</dd></div>
+        <div><dt>0</dt><dd>个上传的文件</dd></div>
+      </dl>
+    </section>
+
+    <section class="block tools">
+      <div class="sec-head">
+        <h2>常用工具</h2>
+        <a class="sec-more" href="#">全部 14 款</a>
+      </div>
+      <div class="tool-grid">
+        <article class="tool bento">
+        <div class="tool-top"><span class="tool-idx">01</span><span class="tool-tag">图像</span></div>
+        <h3 class="tool-name">图片压缩</h3>
+        <p class="tool-desc">本地压缩，尽量保留清晰度</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bento">
+        <div class="tool-top"><span class="tool-idx">02</span><span class="tool-tag">开发</span></div>
+        <h3 class="tool-name">JSON 格式化</h3>
+        <p class="tool-desc">格式化、校验、折叠浏览</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bento">
+        <div class="tool-top"><span class="tool-idx">03</span><span class="tool-tag">开发</span></div>
+        <h3 class="tool-name">二维码生成</h3>
+        <p class="tool-desc">文本、网址、Wi-Fi 与名片</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bento">
+        <div class="tool-top"><span class="tool-idx">04</span><span class="tool-tag">安全</span></div>
+        <h3 class="tool-name">密码生成</h3>
+        <p class="tool-desc">密码学随机源，实时算熵</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bento">
+        <div class="tool-top"><span class="tool-idx">05</span><span class="tool-tag">图像</span></div>
+        <h3 class="tool-name">九宫格切图</h3>
+        <p class="tool-desc">一键切成 3×3，按序下载</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bento">
+        <div class="tool-top"><span class="tool-idx">06</span><span class="tool-tag">文本</span></div>
+        <h3 class="tool-name">文本对比</h3>
+        <p class="tool-desc">逐行 diff，高亮增删改</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+      </div>
+    </section>
+
+    <section class="block ai">
+      <div class="ai-copy">
+        <p class="kicker">AI ASSISTANT</p>
+        <h2>会提问，也该会写完</h2>
+        <p class="ai-desc">对话、写作、画图三个入口共用一套模型配置，支持任意 OpenAI 兼容接口；没有 Key 时进入演示模式，界面照常可用。</p>
+        <a class="btn btn-primary" href="#">试试对话</a>
+      </div>
+      <div class="ai-chat" aria-hidden="true">
+        <div class="bubble user">帮我把今天的搜索记录整理成三个待办</div>
+        <div class="bubble ai">① 回复合作邮件 ② 提交周报 ③ 复查压缩工具的边界情况</div>
+        <div class="bubble user">把第 2 条拆成子任务</div>
+      </div>
+    </section>
+
+    <section class="block hot">
+      <div class="sec-head">
+        <h2>今日热点</h2>
+        <a class="sec-more" href="#">全部来源</a>
+      </div>
+      <ol class="hot-list">
+        <li class="hot-row"><span class="hot-rank">1</span><span class="hot-title">女子每天 2 杯咖啡打喷嚏震断肋骨</span><span class="hot-heat">128.4 万</span></li>
+<li class="hot-row"><span class="hot-rank">2</span><span class="hot-title">LPL 四队承包 S16 瑞士轮前四场</span><span class="hot-heat">96.1 万</span></li>
+<li class="hot-row"><span class="hot-rank">3</span><span class="hot-title">何以中国 当惊世界殊</span><span class="hot-heat">74.2 万</span></li>
+<li class="hot-row"><span class="hot-rank">4</span><span class="hot-title">晚 8 点天猫 iPhone 18 Pro 历史最低价</span><span class="hot-heat">61.8 万</span></li>
+<li class="hot-row"><span class="hot-rank">5</span><span class="hot-title">AI 编程工具正在重写小团队的分工</span><span class="hot-heat">52.3 万</span></li>
+      </ol>
+      <p class="hot-note">微博 · 知乎 · 百度 · 抖音 · B 站 · GitHub · 掘金 · 36 氪 &nbsp;|&nbsp; 实时 8/8 · 最近刷新 11:29</p>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    <span>© 2026 块集 BlockSet</span>
+    <span>本地计算 · 不上传文件 · 无需注册</span>
+    <span class="ftr-note">风格探索样张 · undefined</span>
+  </footer>
+</body>
+</html>

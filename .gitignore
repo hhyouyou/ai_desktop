@@ -1,0 +1,15 @@
+node_modules
+.next
+.next-build
+out
+build
+.env
+.env.local
+.data
+*.log
+.npm-cache
+.tmp
+.archify
+.DS_Store
+next-env.d.ts
+tsconfig.tsbuildinfo

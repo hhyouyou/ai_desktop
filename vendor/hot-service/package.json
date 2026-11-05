@@ -1,0 +1,9 @@
+{
+  "name": "hot-service",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "本地热榜聚合服务（DailyHotApi, MIT, https://github.com/imsyy/DailyHotApi）",
+  "scripts": { "start": "node server.mjs" },
+  "dependencies": { "dailyhot-api": "^2.0.8" }
+}

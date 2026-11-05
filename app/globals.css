@@ -1,0 +1,484 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   块集 BlockSet · 设计令牌
+   风格：明快几何 —— 高饱和撞色 / 粗黑描边 / 硬投影 / 大圆角 / 卡通块
+   ========================================================================== */
+@theme {
+  --color-paper: #fffcf5;
+  --color-cream: #f4efe3;
+  --color-ink: #14110f;
+  --color-ink-soft: #58514a;
+  --color-line: #14110f;
+
+  --color-coral: #ff5a36;
+  --color-sun: #ffc93c;
+  --color-blue: #2f5bff;
+  --color-mint: #00c48c;
+  --color-violet: #9b6bff;
+  --color-sky: #7fd1ff;
+  --color-pink: #ff8fb1;
+
+  --font-display: "Arial Black", "Segoe UI Black", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Code", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  --radius-chunk: 28px;
+  --radius-stub: 18px;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-sun);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-blue);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+  }
+}
+
+@layer components {
+  /* ---------- 容器 ---------- */
+  .shell {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+
+  @media (min-width: 768px) {
+    .shell {
+      padding-inline: 32px;
+    }
+  }
+
+  /* ---------- 硬投影 ---------- */
+  .shadow-hard {
+    box-shadow: var(--ds-shadow);
+  }
+  .shadow-hard-sm {
+    box-shadow: var(--ds-shadow-sm);
+  }
+  .shadow-hard-lg {
+    box-shadow: var(--ds-shadow-lg);
+  }
+  .shadow-hard-coral {
+    box-shadow: var(--ds-shadow-coral);
+  }
+
+  /* ---------- 卡片 ---------- */
+  .surface {
+    background: var(--color-paper);
+    border: var(--ds-border);
+    border-radius: var(--radius-chunk);
+    box-shadow: var(--ds-shadow);
+  }
+  .surface-flat {
+    background: var(--color-paper);
+    border: var(--ds-border);
+    border-radius: var(--radius-chunk);
+  }
+  .surface-tight {
+    background: var(--color-paper);
+    border: var(--ds-border-2);
+    border-radius: var(--radius-stub);
+  }
+  .surface-cream {
+    background: var(--color-cream);
+    border: var(--ds-border);
+    border-radius: var(--radius-chunk);
+  }
+
+  /* ---------- 按钮 ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 22px;
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1;
+    border: var(--ds-border);
+    border-radius: 999px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: var(--ds-shadow-sm);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    white-space: nowrap;
+  }
+  .btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--ds-btn-shadow-hover);
+  }
+  .btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--ds-btn-shadow-active);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--ds-shadow-sm);
+  }
+
+  .btn-primary {
+    background: var(--color-coral);
+    color: #fff;
+  }
+  .btn-sun {
+    background: var(--color-sun);
+  }
+  .btn-ink {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn-blue {
+    background: var(--color-blue);
+    color: #fff;
+  }
+  .btn-mint {
+    background: var(--color-mint);
+  }
+  .btn-sm {
+    padding: 8px 14px;
+    font-size: 13px;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 0 var(--color-ink);
+  }
+  .btn-lg {
+    padding: 16px 30px;
+    font-size: 17px;
+    box-shadow: var(--ds-btn-shadow-hover);
+  }
+  .btn-ghost {
+    background: transparent;
+    box-shadow: none;
+    border-color: transparent;
+  }
+  .btn-ghost:hover {
+    background: var(--color-cream);
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* ---------- 标签 / 徽章 ---------- */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    border: var(--ds-border-2);
+    border-radius: 999px;
+    background: var(--color-paper);
+    white-space: nowrap;
+  }
+  .tag-sun {
+    background: var(--color-sun);
+  }
+  .tag-coral {
+    background: var(--color-coral);
+    color: #fff;
+  }
+  .tag-mint {
+    background: var(--color-mint);
+  }
+  .tag-blue {
+    background: var(--color-blue);
+    color: #fff;
+  }
+  .tag-violet {
+    background: var(--color-violet);
+    color: #fff;
+  }
+  .tag-ink {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  /* ---------- 表单 ---------- */
+  .field {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--color-ink);
+    background: #fff;
+    border: var(--ds-border);
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 0 transparent;
+    transition: box-shadow 0.12s ease;
+  }
+  .field::placeholder {
+    color: var(--ds-placeholder);
+  }
+  .field:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-sun);
+  }
+  .field-sm {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-width: 2px;
+    border-radius: 12px;
+  }
+
+  .label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+
+  /* ---------- 排版 ---------- */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+
+  .display-xl {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 6vw, 4.6rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+  }
+
+  .display-lg {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .prose-blockset {
+    font-size: 16px;
+    line-height: 1.85;
+    color: #2b2620;
+  }
+  .prose-blockset h2 {
+    margin-top: 2.4em;
+    margin-bottom: 0.7em;
+    font-size: 1.6rem;
+  }
+  .prose-blockset h3 {
+    margin-top: 1.8em;
+    margin-bottom: 0.5em;
+    font-size: 1.25rem;
+  }
+  .prose-blockset p {
+    margin: 1em 0;
+  }
+  .prose-blockset ul,
+  .prose-blockset ol {
+    margin: 1em 0 1em 1.4em;
+    list-style: disc;
+  }
+  .prose-blockset ol {
+    list-style: decimal;
+  }
+  .prose-blockset li {
+    margin: 0.4em 0;
+  }
+  .prose-blockset a {
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-decoration-color: var(--color-sun);
+    text-underline-offset: 2px;
+  }
+  .prose-blockset blockquote {
+    margin: 1.4em 0;
+    padding: 14px 18px;
+    border-left: 6px solid var(--color-coral);
+    background: var(--color-cream);
+    border-radius: 0 16px 16px 0;
+    font-weight: 600;
+  }
+  .prose-blockset code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-cream);
+    border: 1px solid #d9d1c2;
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+  .prose-blockset pre {
+    margin: 1.4em 0;
+    padding: 18px;
+    background: var(--color-ink);
+    color: #f7f1e6;
+    border-radius: 20px;
+    overflow-x: auto;
+    border: var(--ds-border);
+  }
+  .prose-blockset pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ---------- 背景纹理 ---------- */
+  .grid-bg {
+    background-image: linear-gradient(to right, rgba(20, 17, 15, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 17, 15, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .dot-bg {
+    background-image: radial-gradient(rgba(20, 17, 15, 0.16) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+  }
+  .stripe-bg {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-sun),
+      var(--color-sun) 12px,
+      var(--color-cream) 12px,
+      var(--color-cream) 24px
+    );
+  }
+
+  /* ---------- 动效 ---------- */
+  .hover-lift {
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .hover-lift:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--ds-shadow-hover);
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 0;
+    width: max-content;
+    animation: marquee 26s linear infinite;
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .float-slow {
+    animation: floaty 7s ease-in-out infinite;
+  }
+  .float-slower {
+    animation: floaty 11s ease-in-out infinite;
+  }
+  @keyframes floaty {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(2deg);
+    }
+  }
+
+  .spin-slow {
+    animation: spin 22s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ---------- 滚动条 ---------- */
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink) var(--color-cream);
+  }
+
+  /* ---------- 日志/流式文本 ---------- */
+  .stream-cursor::after {
+    content: "▍";
+    animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink {
+    to {
+      visibility: hidden;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .float-slow,
+  .float-slower,
+  .spin-slow {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ==========================================================================
+   设计令牌层（主题只覆盖这些变量，不改结构）
+   ========================================================================== */
+:root {
+  --ds-border: 3px solid var(--color-ink);
+  --ds-border-2: 2px solid var(--color-ink);
+  --ds-border-sub: 2px solid color-mix(in srgb, var(--color-ink) 15%, transparent);
+  --ds-shadow: 6px 6px 0 0 var(--color-ink);
+  --ds-shadow-sm: 3px 3px 0 0 var(--color-ink);
+  --ds-shadow-lg: 10px 10px 0 0 var(--color-ink);
+  --ds-shadow-hover: 8px 8px 0 0 var(--color-ink);
+  --ds-shadow-coral: 6px 6px 0 0 var(--color-coral);
+  --ds-btn-shadow: 3px 3px 0 0 var(--color-ink);
+  --ds-btn-shadow-hover: 5px 5px 0 0 var(--color-ink);
+  --ds-btn-shadow-active: 1px 1px 0 0 var(--color-ink);
+}
+
+@layer components {
+  .edge { border: var(--ds-border); }
+  .edge-2 { border: var(--ds-border-2); }
+  .edge-sub { border: var(--ds-border-sub); }
+  .edge-b { border-bottom: var(--ds-border); }
+  .edge-t { border-top: var(--ds-border); }
+  .edge-l { border-left: var(--ds-border); }
+  .edge-r { border-right: var(--ds-border); }
+}

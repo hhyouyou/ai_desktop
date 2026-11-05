@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>块集 · UI 风格探索</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f3f3f0;color:#14161a;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.6}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:30px;margin:0 0 8px;letter-spacing:-.02em}
+  .lead{color:#6d737c;font-size:14.5px;max-width:44em;margin:0 0 6px}
+  .note{color:#8b9099;font-size:12.5px;margin:0 0 32px}
+  .item{background:#fff;border:1px solid #e7e7e2;border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .item-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .item-head h2{font-size:16px;margin:0}
+  .open{font-size:12.5px;color:#4f46e5;text-decoration:none;font-weight:600}
+  .item-desc{color:#6d737c;font-size:13px;margin:6px 0 14px;max-width:70em}
+  .frame{position:relative;height:440px;overflow:hidden;border:1px solid #e7e7e2;border-radius:12px;background:#fff}
+  .frame iframe{width:1440px;height:1300px;border:0;transform:scale(.76);transform-origin:top left}
+  .frame::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,transparent 82%,rgba(255,255,255,.95))}
+  @media (max-width:900px){.frame{height:300px}.frame iframe{transform:scale(.5)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>块集 · UI 风格探索</h1>
+    <p class="lead">同一套内容（首页：主视觉 / 工具 / AI / 热点），6 种不同的视觉语言。纯静态样张，没有功能，也不影响线上版本。</p>
+    <p class="note">点标题右侧「打开完整页面」可看 1440 宽的真实排版；下面的缩略框是真实 iframe 渲染。</p>
+    <section class="item">
+      <div class="item-head">
+        <h2>01 · 编辑杂志</h2>
+        <a class="open" href="01-editorial.html" target="_blank">打开完整页面 ↗</a>
+      </div>
+      <p class="item-desc">纸感米白 + 宋体标题 + 双色克制，靠字号、留白和细分隔线组织信息。最安静、最“读物感”。</p>
+      <div class="frame">
+        <iframe src="01-editorial.html" title="01 · 编辑杂志" loading="lazy"></iframe>
+      </div>
+    </section>
+    <section class="item">
+      <div class="item-head">
+        <h2>02 · 瑞士网格</h2>
+        <a class="open" href="02-swiss.html" target="_blank">打开完整页面 ↗</a>
+      </div>
+      <p class="item-desc">纯白 + 严格 12 栏 + 单点红，Helvetica 风格粗标题，信息密度高但秩序感强。最“产品/设计公司”。</p>
+      <div class="frame">
+        <iframe src="02-swiss.html" title="02 · 瑞士网格" loading="lazy"></iframe>
+      </div>
+    </section>
+    <section class="item">
+      <div class="item-head">
+        <h2>03 · 柔和卡片</h2>
+        <a class="open" href="03-soft.html" target="_blank">打开完整页面 ↗</a>
+      </div>
+      <p class="item-desc">浅灰蓝底 + 大圆角 + 软阴影 + 低饱和蓝，卡片轻浮动。最“亲切、现代 SaaS”，但整体最低调。</p>
+      <div class="frame">
+        <iframe src="03-soft.html" title="03 · 柔和卡片" loading="lazy"></iframe>
+      </div>
+    </section>
+    <section class="item">
+      <div class="item-head">
+        <h2>04 · 暗色终端</h2>
+        <a class="open" href="04-dark.html" target="_blank">打开完整页面 ↗</a>
+      </div>
+      <p class="item-desc">近黑底 + 等宽字 + 单点荧光绿 + 网格底纹。最“开发者/极客”，长时间看最不刺眼。</p>
+      <div class="frame">
+        <iframe src="04-dark.html" title="04 · 暗色终端" loading="lazy"></iframe>
+      </div>
+    </section>
+    <section class="item">
+      <div class="item-head">
+        <h2>05 · 日式暖纸</h2>
+        <a class="open" href="05-warm.html" target="_blank">打开完整页面 ↗</a>
+      </div>
+      <p class="item-desc">米白纸纹 + 宋体 + 陶土/橄榄色点缀 + 大留白。最“手作、生活感”，适合内容型个人站。</p>
+      <div class="frame">
+        <iframe src="05-warm.html" title="05 · 日式暖纸" loading="lazy"></iframe>
+      </div>
+    </section>
+    <section class="item">
+      <div class="item-head">
+        <h2>06 · Bento 现代</h2>
+        <a class="open" href="06-bento.html" target="_blank">打开完整页面 ↗</a>
+      </div>
+      <p class="item-desc">浅灰白 + 白卡片 + 细边 + 靛蓝单强调 + 大圆角。最“2025 产品官网”，克制但有现代感。</p>
+      <div class="frame">
+        <iframe src="06-bento.html" title="06 · Bento 现代" loading="lazy"></iframe>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

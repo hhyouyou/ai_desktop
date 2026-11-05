@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>块集 · 纸面工作台</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#efe9dc;color:#2f2a24;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  background-image:radial-gradient(rgba(120,100,70,.07) 1px,transparent 1px);background-size:5px 5px}
+.desk{max-width:1180px;margin:0 auto;padding:34px 28px 70px}
+.top{display:flex;align-items:baseline;gap:20px;padding-bottom:14px;border-bottom:1px solid #d8ccb6;margin-bottom:28px}
+.brand{font-family:"Songti SC","Noto Serif SC",SimSun,Georgia,serif;font-size:21px;letter-spacing:.12em}
+.brand span{font-family:inherit;font-size:9px;letter-spacing:.26em;color:#8b7d68;margin-left:8px}
+.top .slogan{margin-left:auto;font-size:12.5px;color:#7a6c58;letter-spacing:.06em}
+.top .clock{font-size:12px;color:#7a6c58}
+.sheets{display:grid;grid-template-columns:1.15fr .85fr;grid-template-areas:"tools ai" "todo hot";gap:22px}
+.sheet{position:relative;background:#fbf7ee;border:1px solid #d9cdb8;border-radius:4px;padding:22px 24px;box-shadow:0 10px 24px rgba(122,100,70,.1)}
+.sheet::before{content:"";position:absolute;left:50%;top:-9px;width:74px;height:18px;transform:translateX(-50%) rotate(-1.5deg);background:rgba(214,198,168,.55);border:1px solid rgba(180,160,125,.5)}
+.sheet h2{font-family:"Songti SC","Noto Serif SC",SimSun,Georgia,serif;font-weight:400;font-size:20px;letter-spacing:.06em;margin:0 0 4px}
+.sheet .sub{margin:0 0 16px;font-size:11px;letter-spacing:.14em;color:#8b7d68}
+.sheet-tools{grid-area:tools}
+.sheet-ai{grid-area:ai}
+.sheet-todo{grid-area:todo}
+.sheet-hot{grid-area:hot}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{border-bottom:1px dashed #d9cdb8;padding:10px 0;display:flex;flex-direction:column;gap:2px}
+.tool-name{font-size:14px}
+.tool-hint{font-size:11px;color:#8b7d68}
+.chat{display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.85}
+.msg{padding:8px 0;border-bottom:1px dashed #e2d8c6}
+.msg .who{display:block;font-size:10px;letter-spacing:.14em;color:#a2573a;margin-bottom:2px}
+.msg.me{color:#5c5347}
+.msg.me .who{color:#8b7d68}
+.composer{margin-top:14px;border:1px solid #d9cdb8;background:#f6f0e4;padding:9px 12px;font-size:11.5px;color:#9c8f7b;display:flex;justify-content:space-between}
+.todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;font-size:13px}
+.todo li{display:flex;gap:9px;align-items:flex-start;line-height:1.7}
+.todo .box{width:14px;height:14px;border:1px solid #b9ab92;margin-top:4px;flex-shrink:0;text-align:center;line-height:12px;font-size:10px;color:#a2573a}
+.todo li.done{color:#a4977f;text-decoration:line-through}
+.todo .add{margin-top:6px;color:#a4977f;font-size:11.5px;border-top:1px dashed #e2d8c6;padding-top:10px}
+.hot{list-style:none;margin:0;padding:0;font-size:13px;line-height:1.9}
+.hot li{display:grid;grid-template-columns:22px 1fr auto;gap:10px;padding:7px 0;border-bottom:1px dashed #e2d8c6;align-items:baseline}
+.hot .n{font-family:"Songti SC",SimSun,serif;color:#a2573a;font-size:12px}
+.hot .h{font-size:10.5px;color:#a4977f}
+.sheet-slogan{grid-column:1/-1;text-align:center;padding:26px;border-style:dashed;background:transparent;box-shadow:none}
+.sheet-slogan::before{display:none}
+.sheet-slogan p{margin:0;font-family:"Songti SC","Noto Serif SC",SimSun,serif;font-size:22px;letter-spacing:.08em;color:#5c5347}
+.sheet-slogan small{display:block;margin-top:8px;font-size:11px;letter-spacing:.18em;color:#8b7d68}
+@media (max-width:900px){.sheets{grid-template-columns:1fr;grid-template-areas:"tools" "ai" "todo" "hot"}.top .slogan{display:none}}
+</style></head>
+<body>
+  <main class="desk">
+    <header class="top">
+      <span class="brand">块集<span>BLOCKSET</span></span>
+      <span class="slogan">一张桌子，放下今天要做的事</span>
+      <span class="clock">09:41 · 10 月 20 日</span>
+    </header>
+    <div class="sheets">
+      <section class="sheet sheet-tools">
+        <h2>常用工具</h2>
+        <p class="sub">LOCAL TOOLS · 14</p>
+        <div class="tools"><div class="tool"><span class="tool-name">图片压缩</span><span class="tool-hint">本地处理</span></div><div class="tool"><span class="tool-name">JSON 格式化</span><span class="tool-hint">开发</span></div><div class="tool"><span class="tool-name">二维码生成</span><span class="tool-hint">Wi-Fi / 名片</span></div><div class="tool"><span class="tool-name">密码生成</span><span class="tool-hint">密码学随机</span></div><div class="tool"><span class="tool-name">九宫格切图</span><span class="tool-hint">3×3 切图</span></div><div class="tool"><span class="tool-name">文本对比</span><span class="tool-hint">逐行 diff</span></div></div>
+      </section>
+      <section class="sheet sheet-ai">
+        <h2>AI 对话</h2>
+        <p class="sub">CHAT · DEEPSEEK</p>
+        <div class="chat"><div class="msg me"><span class="who">我</span>把今天的搜索记录整理成三个待办</div><div class="msg ai"><span class="who">块集 AI</span>已整理：① 回复合作邮件 ② 提交周报 ③ 复查压缩工具的边界情况</div><div class="msg me"><span class="who">我</span>第 2 条拆成子任务</div><div class="msg ai"><span class="who">块集 AI</span>① 收集本周数据 ② 写三条结论 ③ 周五前发出</div></div>
+        <div class="composer"><span>继续追问…</span><span>↵</span></div>
+      </section>
+      <section class="sheet sheet-todo">
+        <h2>待办</h2>
+        <p class="sub">TODAY · 2/5</p>
+        <ul class="todo"><li class="done "><span class="box">✓</span><span class="todo-text">回复合作邮件</span></li><li class="done "><span class="box">✓</span><span class="todo-text">提交周报草稿</span></li><li class=" "><span class="box"></span><span class="todo-text">复查图片压缩的边界情况</span></li><li class=" "><span class="box"></span><span class="todo-text">把热榜接进 AI 简报</span></li><li class=" "><span class="box"></span><span class="todo-text">给工具页补移动端断点</span></li><li class="add">＋ 写下一件事</li></ul>
+      </section>
+      <section class="sheet sheet-hot">
+        <h2>今日热点</h2>
+        <p class="sub">DAILY HOT · 8 个来源</p>
+        <ul class="hot"><li><span class="n">1</span><span>女子每天 2 杯咖啡打喷嚏震断肋骨</span><span class="h">128.4 万</span></li><li><span class="n">2</span><span>LPL 四队承包 S16 瑞士轮前四场</span><span class="h">96.1 万</span></li><li><span class="n">3</span><span>何以中国 当惊世界殊</span><span class="h">74.2 万</span></li><li><span class="n">4</span><span>晚 8 点天猫 iPhone 18 Pro 历史最低价</span><span class="h">61.8 万</span></li><li><span class="n">5</span><span>AI 编程工具正在重写小团队的分工</span><span class="h">52.3 万</span></li></ul>
+      </section>
+      <section class="sheet sheet-slogan">
+        <p>把重复的小事，收进同一张桌子。</p>
+        <small>TOOLS · AI · TODOS · DAILY HOT</small>
+      </section>
+    </div>
+  </main>
+</body></html>

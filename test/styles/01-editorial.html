@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>块集 BlockSet · undefined</title>
+<style>/* ===== 01 编辑杂志：纸感、衬线、极简双色 ===== */
+:root{
+  --paper:#fbf8f1; --ink:#16140f; --muted:#6d6659; --line:#d8d0c0; --accent:#8a2b1b;
+  --serif:"Songti SC","Noto Serif SC",SimSun,Georgia,"Times New Roman",serif;
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body.page{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;
+  background-image:radial-gradient(rgba(22,20,15,.035) 1px,transparent 1px);background-size:4px 4px}
+.hdr{max-width:1040px;margin:0 auto;padding:26px 32px 14px;display:flex;align-items:baseline;gap:32px;border-bottom:1px solid var(--ink)}
+.brand{font-family:var(--serif);font-size:24px;letter-spacing:.08em;text-decoration:none;color:var(--ink);display:flex;gap:10px;align-items:baseline}
+.brand-en{font-family:var(--sans);font-size:9px;letter-spacing:.3em;color:var(--muted)}
+.nav{margin-left:auto;display:flex;gap:24px}
+.nav a{color:var(--ink);text-decoration:none;font-size:13px;letter-spacing:.06em;padding-bottom:2px;border-bottom:1px solid transparent}
+.nav a:hover{border-color:var(--accent)}
+.hdr-cta{font-size:12px;letter-spacing:.14em;color:var(--accent);text-decoration:none;text-transform:uppercase}
+main{max-width:1040px;margin:0 auto;padding:0 32px 40px}
+.hero{padding:76px 0 68px;border-bottom:1px solid var(--line)}
+.kicker{font-size:10.5px;letter-spacing:.32em;color:var(--accent);text-transform:uppercase;margin:0 0 26px}
+.headline{font-family:var(--serif);font-weight:400;font-size:clamp(42px,5.4vw,68px);line-height:1.24;letter-spacing:.01em;margin:0;max-width:15em}
+.lede{max-width:34em;color:var(--muted);font-size:15.5px;margin:30px 0 0;line-height:1.9}
+.actions{display:flex;gap:26px;margin-top:38px;align-items:center}
+.btn{text-decoration:none;font-size:13.5px;letter-spacing:.06em;padding:2px 0;border-bottom:1px solid currentColor;color:var(--ink)}
+.btn-primary{color:var(--accent);border-bottom-width:2px}
+.btn-ghost{color:var(--muted)}
+.stats{display:flex;gap:64px;margin:56px 0 0;padding:0}
+.stats div{display:flex;flex-direction:column;gap:2px}
+.stats dt{font-family:var(--serif);font-size:38px;line-height:1}
+.stats dd{margin:0;font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.block{padding:64px 0;border-bottom:1px solid var(--line)}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:34px}
+.sec-head h2{font-family:var(--serif);font-weight:400;font-size:30px;letter-spacing:.04em;margin:0}
+.sec-more{font-size:11.5px;letter-spacing:.16em;color:var(--muted);text-decoration:none;text-transform:uppercase}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:64px;border-top:1px solid var(--line)}
+.tool.bordered{display:grid;grid-template-columns:1fr auto;column-gap:24px;align-items:baseline;padding:20px 0;border-bottom:1px solid var(--line)}
+.tool-top{grid-column:2;grid-row:1 / span 2;align-self:start;display:flex;justify-content:flex-end}
+.tool-idx{display:none}
+.tool-tag{font-size:10px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.tool-name{grid-column:1;grid-row:1;font-family:var(--serif);font-weight:400;font-size:20px;margin:0}
+.tool-desc{grid-column:1;grid-row:2;margin:2px 0 0;color:var(--muted);font-size:13px}
+.tool-go{display:none}
+.ai{display:grid;grid-template-columns:1fr 1fr;gap:64px}
+.ai-copy h2{font-family:var(--serif);font-weight:400;font-size:34px;margin:0 0 16px;letter-spacing:.03em}
+.ai-desc{color:var(--muted);font-size:14px;margin:0 0 26px;max-width:26em}
+.ai-chat{border-left:2px solid var(--accent);padding:6px 0 6px 26px;display:flex;flex-direction:column;gap:16px}
+.bubble{font-size:13.5px;line-height:1.8;color:var(--ink)}
+.bubble.user{color:var(--muted);font-style:italic}
+.bubble.user::before{content:"问 — "}
+.bubble.ai::before{content:"答 — ";color:var(--accent);font-family:var(--serif)}
+.hot-list{list-style:none;margin:0;padding:0;counter-reset:hot;border-top:1px solid var(--line)}
+.hot-row{display:grid;grid-template-columns:38px 1fr auto;align-items:baseline;gap:18px;padding:15px 0;border-bottom:1px solid var(--line)}
+.hot-rank{font-family:var(--serif);font-size:12px;color:var(--accent)}
+.hot-title{font-size:14.5px}
+.hot-heat{font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.hot-note{margin:22px 0 0;font-size:10.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.ftr{max-width:1040px;margin:0 auto;padding:34px 32px 60px;display:flex;gap:26px;font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.ftr-note{margin-left:auto}
+@media (max-width:760px){.nav{display:none}.hero{padding:56px 0}.tool-grid{grid-template-columns:1fr}.ai{grid-template-columns:1fr;gap:32px}.stats{gap:32px}}</style>
+</head>
+<body class="page">
+  <header class="hdr">
+    <a class="brand" href="#">块集<span class="brand-en">BLOCKSET</span></a>
+    <nav class="nav"><a href="#">工具箱</a><a href="#">AI 助手</a><a href="#">每日热点</a><a href="#">博客</a></nav>
+    <a class="hdr-cta" href="#">开始使用</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="kicker">TOOLBOX · AI · DAILY HOT</p>
+      <h1 class="headline">把重复的小事<br />做成能用的工具</h1>
+      <p class="lede">图片压缩、JSON 格式化、二维码、密码生成——在浏览器本地完成，文件不上传。再加 AI 对话、每日热点与待办清单。</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#">开始用工具</a>
+        <a class="btn btn-ghost" href="#">打开 AI 对话</a>
+      </div>
+      <dl class="stats">
+        <div><dt>14</dt><dd>款即用工具</dd></div>
+        <div><dt>8</dt><dd>个热点来源</dd></div>
+        <div><dt>0</dt><dd>个上传的文件</dd></div>
+      </dl>
+    </section>
+
+    <section class="block tools">
+      <div class="sec-head">
+        <h2>常用工具</h2>
+        <a class="sec-more" href="#">全部 14 款</a>
+      </div>
+      <div class="tool-grid">
+        <article class="tool bordered">
+        <div class="tool-top"><span class="tool-idx">01</span><span class="tool-tag">图像</span></div>
+        <h3 class="tool-name">图片压缩</h3>
+        <p class="tool-desc">本地压缩，尽量保留清晰度</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bordered">
+        <div class="tool-top"><span class="tool-idx">02</span><span class="tool-tag">开发</span></div>
+        <h3 class="tool-name">JSON 格式化</h3>
+        <p class="tool-desc">格式化、校验、折叠浏览</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bordered">
+        <div class="tool-top"><span class="tool-idx">03</span><span class="tool-tag">开发</span></div>
+        <h3 class="tool-name">二维码生成</h3>
+        <p class="tool-desc">文本、网址、Wi-Fi 与名片</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bordered">
+        <div class="tool-top"><span class="tool-idx">04</span><span class="tool-tag">安全</span></div>
+        <h3 class="tool-name">密码生成</h3>
+        <p class="tool-desc">密码学随机源，实时算熵</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bordered">
+        <div class="tool-top"><span class="tool-idx">05</span><span class="tool-tag">图像</span></div>
+        <h3 class="tool-name">九宫格切图</h3>
+        <p class="tool-desc">一键切成 3×3，按序下载</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+<article class="tool bordered">
+        <div class="tool-top"><span class="tool-idx">06</span><span class="tool-tag">文本</span></div>
+        <h3 class="tool-name">文本对比</h3>
+        <p class="tool-desc">逐行 diff，高亮增删改</p>
+        <span class="tool-go">打开 →</span>
+      </article>
+      </div>
+    </section>
+
+    <section class="block ai">
+      <div class="ai-copy">
+        <p class="kicker">AI ASSISTANT</p>
+        <h2>会提问，也该会写完</h2>
+        <p class="ai-desc">对话、写作、画图三个入口共用一套模型配置，支持任意 OpenAI 兼容接口；没有 Key 时进入演示模式，界面照常可用。</p>
+        <a class="btn btn-primary" href="#">试试对话</a>
+      </div>
+      <div class="ai-chat" aria-hidden="true">
+        <div class="bubble user">帮我把今天的搜索记录整理成三个待办</div>
+        <div class="bubble ai">① 回复合作邮件 ② 提交周报 ③ 复查压缩工具的边界情况</div>
+        <div class="bubble user">把第 2 条拆成子任务</div>
+      </div>
+    </section>
+
+    <section class="block hot">
+      <div class="sec-head">
+        <h2>今日热点</h2>
+        <a class="sec-more" href="#">全部来源</a>
+      </div>
+      <ol class="hot-list">
+        <li class="hot-row"><span class="hot-rank">1</span><span class="hot-title">女子每天 2 杯咖啡打喷嚏震断肋骨</span><span class="hot-heat">128.4 万</span></li>
+<li class="hot-row"><span class="hot-rank">2</span><span class="hot-title">LPL 四队承包 S16 瑞士轮前四场</span><span class="hot-heat">96.1 万</span></li>
+<li class="hot-row"><span class="hot-rank">3</span><span class="hot-title">何以中国 当惊世界殊</span><span class="hot-heat">74.2 万</span></li>
+<li class="hot-row"><span class="hot-rank">4</span><span class="hot-title">晚 8 点天猫 iPhone 18 Pro 历史最低价</span><span class="hot-heat">61.8 万</span></li>
+<li class="hot-row"><span class="hot-rank">5</span><span class="hot-title">AI 编程工具正在重写小团队的分工</span><span class="hot-heat">52.3 万</span></li>
+      </ol>
+      <p class="hot-note">微博 · 知乎 · 百度 · 抖音 · B 站 · GitHub · 掘金 · 36 氪 &nbsp;|&nbsp; 实时 8/8 · 最近刷新 11:29</p>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    <span>© 2026 块集 BlockSet</span>
+    <span>本地计算 · 不上传文件 · 无需注册</span>
+    <span class="ftr-note">风格探索样张 · undefined</span>
+  </footer>
+</body>
+</html>
