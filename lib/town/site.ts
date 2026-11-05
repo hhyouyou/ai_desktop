@@ -279,6 +279,148 @@ function bellframe(def: AnnexDef): THREE.Group {
   return group;
 }
 
+/* ------------------------------ 天文台：观测场 ------------------------------ */
+
+/** 圆形观测场：石铺地面 + 一圈方位刻度，四正方向加长 */
+function roundel(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  const r = (def.w ?? 9) / 2;
+
+  // 外圈是环，不是实心圆柱——实心的会把整个台面盖住
+  const rimTop = new THREE.Mesh(new THREE.RingGeometry(r, r + 0.34, 56), toon(0x8a7d60, THREE.DoubleSide));
+  rimTop.rotation.x = -Math.PI / 2;
+  rimTop.position.y = 0.17;
+  rimTop.receiveShadow = true;
+  group.add(rimTop);
+
+  const rimSide = new THREE.Mesh(
+    new THREE.CylinderGeometry(r + 0.32, r + 0.32, 0.17, 56, 1, true),
+    toon(0x8f8264, THREE.DoubleSide),
+  );
+  rimSide.position.y = 0.085;
+  group.add(rimSide);
+
+  const floor = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.1, 56), toon(0xeae2cd));
+  floor.position.y = 0.06;
+  floor.receiveShadow = true;
+  group.add(floor);
+
+  [0.84, 0.56].forEach((ratio) => {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(r * ratio, r * (ratio + 0.04), 56),
+      toon(0xb0a488, THREE.DoubleSide),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.115;
+    group.add(ring);
+  });
+
+  for (let i = 0; i < 24; i += 1) {
+    const a = (i / 24) * Math.PI * 2;
+    const major = i % 6 === 0;
+    const tick = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.012, major ? 0.52 : 0.26),
+      toon(major ? 0x8f846c : 0xb0a488),
+    );
+    tick.position.set(Math.sin(a) * (r - 0.46), 0.117, Math.cos(a) * (r - 0.46));
+    tick.rotation.y = a;
+    group.add(tick);
+  }
+
+  // 一条穿过中心的子午线
+  const meridian = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.012, r * 1.72), toon(0xb0a488));
+  meridian.position.y = 0.117;
+  group.add(meridian);
+
+  return group;
+}
+
+/** 三脚架上的小望远镜 */
+function telescope(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  for (let i = 0; i < 3; i += 1) {
+    const pivot = new THREE.Group();
+    pivot.rotation.y = (i / 3) * Math.PI * 2;
+    const leg = m(new THREE.BoxGeometry(0.06, 1.34, 0.06), 0x6b533a, 0, 0.64, 0.26);
+    leg.rotation.x = -0.24;
+    pivot.add(leg);
+    group.add(pivot);
+  }
+
+  group.add(m(new THREE.CylinderGeometry(0.1, 0.12, 0.16, 8), 0x5d5a55, 0, 1.36, 0));
+  group.add(m(new THREE.CylinderGeometry(0.14, 0.14, 0.06, 10), 0x7d7972, 0, 1.46, 0));
+
+  const tube = new THREE.Group();
+  tube.position.set(0, 1.56, 0);
+  tube.rotation.x = -0.62;
+  tube.add(m(new THREE.CylinderGeometry(0.1, 0.13, 1.24, 12), 0x8a857c, 0, 0, 0));
+  tube.add(m(new THREE.CylinderGeometry(0.15, 0.15, 0.09, 12), 0xc9a24a, 0, 0.62, 0));
+  tube.add(m(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 10), 0x5d5a55, 0, -0.62, 0));
+  tube.add(m(new THREE.BoxGeometry(0.04, 0.04, 0.26), 0x5d5a55, 0, -0.24, 0.16));
+  group.add(tube);
+
+  return group;
+}
+
+/** 星图石碑：底座、石板、刻着的星点与连线 */
+function stele(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  group.add(m(new THREE.BoxGeometry(1.4, 0.18, 0.7), 0xb0a488, 0, 0.09, 0));
+  group.add(m(new THREE.BoxGeometry(1.2, 0.14, 0.56), 0xc4b89c, 0, 0.25, 0));
+
+  const slab = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.14, 1.52, 0.24), toon(0xd3c9b1)));
+  slab.position.y = 1.06;
+  group.add(slab);
+
+  const face = m(new THREE.BoxGeometry(0.94, 1.3, 0.03), 0x9aa6b8, 0, 1.06, 0.14);
+
+  // 星点：几颗星与它们之间的连线
+  const stars: [number, number][] = [
+    [-0.3, 0.46],
+    [-0.08, 0.34],
+    [0.12, 0.44],
+    [0.3, 0.24],
+    [-0.16, 0.06],
+    [0.06, -0.14],
+    [-0.26, -0.34],
+    [0.2, -0.42],
+  ];
+  stars.forEach(([x, y], i) => {
+    group.add(m(new THREE.SphereGeometry(i % 3 === 0 ? 0.045 : 0.032, 8, 6), 0xf2ead6, x, 1.06 + y, 0.16));
+  });
+  [
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [1, 4],
+    [4, 5],
+    [5, 6],
+    [5, 7],
+  ].forEach(([a, b]) => {
+    const [x1, y1] = stars[a];
+    const [x2, y2] = stars[b];
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(Math.hypot(x2 - x1, y2 - y1), 0.014, 0.01),
+      toon(0xdfd7c2),
+    );
+    line.position.set((x1 + x2) / 2, 1.06 + (y1 + y2) / 2, 0.158);
+    line.rotation.z = Math.atan2(y2 - y1, x2 - x1);
+    group.add(line);
+  });
+
+  group.add(face);
+  group.add(m(new THREE.BoxGeometry(1.22, 0.1, 0.3), 0xb0a488, 0, 1.86, 0));
+
+  return group;
+}
+
 /* ------------------------------ 工坊：木工与铁活 ------------------------------ */
 
 /** 确定性伪随机，保证每次刷新长一样 */
@@ -852,6 +994,12 @@ export function createAnnex(def: AnnexDef): THREE.Group {
       return sundial(def);
     case "bellframe":
       return bellframe(def);
+    case "roundel":
+      return roundel(def);
+    case "telescope":
+      return telescope(def);
+    case "stele":
+      return stele(def);
     default:
       return new THREE.Group();
   }

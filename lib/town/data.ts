@@ -217,8 +217,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "网址导航",
     href: "/menus",
     desc: "精选站点收藏夹，本质是一块指路牌",
-    x: -33.75,
-    z: 6.25,
+    x: -24,
+    z: 21,
     w: 5.27,
     d: 4.96,
     h: 3.91,
@@ -357,7 +357,11 @@ export type AnnexKind =
   | "monument"
   /* 钟楼 */
   | "sundial"
-  | "bellframe";
+  | "bellframe"
+  /* 天文台 */
+  | "roundel"
+  | "telescope"
+  | "stele";
 
 export type AnnexDef = {
   kind: AnnexKind;
@@ -417,6 +421,20 @@ export const SITES: SiteDef[] = [
       // 长椅
       { kind: "bench", x: 6, z: 10.4, rot: 0 },
       { kind: "bench", x: 9, z: 10.4, rot: 0 },
+    ],
+  },
+  {
+    id: "observatory",
+    annexes: [
+      // 楼前的圆形观测台：自带一圈方位刻度
+      { kind: "roundel", x: -33.5, z: 0.5, w: 8.8 },
+      // 两架小望远镜
+      { kind: "telescope", x: -36.2, z: 1.6, rot: 0.5 },
+      { kind: "telescope", x: -30.7, z: 1.3, rot: -0.4 },
+      // 星图石碑
+      { kind: "stele", x: -36.4, z: 2.7, rot: 0.5 },
+      { kind: "bench", x: -33.5, z: 3.9, rot: Math.PI },
+      { kind: "lamp", x: -37.5, z: -0.6 },
     ],
   },
   {
@@ -603,7 +621,7 @@ export const YARDS: { x: number; z: number; w: number; d: number }[] = [
   { x: 30, z: -36.4, w: 5.5, d: 3 },
   { x: -15, z: -10.5, w: 7.5, d: 11 },
   { x: -15, z: 10.5, w: 7.5, d: 9.5 },
-  { x: -34.5, z: 0.6, w: 6.5, d: 5 },
+  { x: -33.5, z: -9.8, w: 7, d: 3.2 },
   { x: -34, z: 12, w: 7.5, d: 5.5 },
   { x: 7.5, z: -8, w: 8, d: 6 },
   { x: 7.5, z: -25.5, w: 7, d: 4.2 },

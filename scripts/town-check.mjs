@@ -142,7 +142,7 @@ async function main() {
   fs.writeFileSync(file1, Buffer.from(shot1.data, "base64"));
 
   // 先拉近看工坊院子（此时还没有进入卡片挡住画面）
-  await evaluate(cdp, `window.__town && window.__town.focusOn(8.75, 25, 3.2)`);
+  await evaluate(cdp, `window.__town && window.__town.focusOn(-33.5, 0, 4.4)`);
   await sleep(1600);
   const shot3 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const file3 = path.join(OUT_DIR, "town-03-focus.png");
@@ -150,7 +150,7 @@ async function main() {
   await evaluate(cdp, `window.__town && window.__town.resetView()`);
   await sleep(600);
 
-  await evaluate(cdp, `window.__town && window.__town.goToBuilding('clocktower')`);
+  await evaluate(cdp, `window.__town && window.__town.goToBuilding('observatory')`);
 
   let arrived = { card: false, name: null, label: null };
   let state = null;
