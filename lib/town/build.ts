@@ -18,63 +18,11 @@ import {
   type StreetDef,
   type StreetKind,
 } from "./data";
+import { flat, getGradientMap, outline, shadowed, toon } from "./materials";
+import { createSignature } from "./signature";
 import { createBoardTexture, createClockTexture, createSignTexture } from "./textures";
 
-/* ------------------------------ 材质 ------------------------------ */
-
-let gradientMap: THREE.DataTexture | null = null;
-
-function getGradientMap(): THREE.DataTexture {
-  if (!gradientMap) {
-    const data = new Uint8Array([96, 158, 214, 255]);
-    const texture = new THREE.DataTexture(data, 4, 1, THREE.RedFormat);
-    texture.minFilter = THREE.NearestFilter;
-    texture.magFilter = THREE.NearestFilter;
-    texture.needsUpdate = true;
-    gradientMap = texture;
-  }
-  return gradientMap;
-}
-
-const materialCache = new Map<string, THREE.MeshToonMaterial>();
-
-export function toon(color: number, side: THREE.Side = THREE.FrontSide): THREE.MeshToonMaterial {
-  const key = `${color}-${side}`;
-  const cached = materialCache.get(key);
-  if (cached) return cached;
-  const material = new THREE.MeshToonMaterial({
-    color,
-    gradientMap: getGradientMap(),
-    side,
-  });
-  materialCache.set(key, material);
-  return material;
-}
-
-export function flat(color: number, map?: THREE.Texture): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({ color, map, toneMapped: false });
-}
-
-export function disposeSharedMaterials(): void {
-  materialCache.forEach((material) => material.dispose());
-  materialCache.clear();
-  gradientMap?.dispose();
-  gradientMap = null;
-}
-
-function outline(geometry: THREE.BufferGeometry, color: number, opacity = 0.5): THREE.LineSegments {
-  const lines = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geometry, 26),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity }),
-  );
-  return lines;
-}
-
-export function shadowed<T extends THREE.Mesh>(mesh: T): T {
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
-}
+/* 材质工具统一定义在 materials.ts */
 
 /* ------------------------------ 建筑 ------------------------------ */
 
@@ -195,8 +143,7 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
   group.add(body);
   hitTargets.push(body);
 
-  const roof = createRoof(def, accent);
-  group.add(roof.group);
+  group.add(createSignature(def));
 
   const doorHeight = Math.min(1.95, h - 0.8);
   const doorWidth = Math.min(1.1, w * 0.3);
@@ -249,95 +196,6 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
   sign.position.set(0, Math.min(h * 0.74, 2.75), d / 2 + 0.07);
   group.add(sign);
 
-  const extras = def.extras ?? [];
-  const roofRise = roof.rise;
-
-  if (extras.includes("chimney")) {
-    const chimney = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.46, 1.25, 0.46), toon(PAPER.wallSide)));
-    chimney.position.set(-w * 0.28, h + 0.62, -d * 0.18);
-    group.add(chimney);
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.14, 0.6), toon(PAPER.roofSide));
-    cap.position.set(-w * 0.28, h + 1.28, -d * 0.18);
-    group.add(cap);
-  }
-
-  if (extras.includes("awning")) {
-    const awning = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, 0.1, 1.05), toon(accent.base)));
-    awning.position.set(0, 2.42, d / 2 + 0.52);
-    awning.rotation.x = -0.3;
-    group.add(awning);
-    const lip = new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, 0.22, 0.1), toon(accent.soft));
-    lip.position.set(0, 2.28, d / 2 + 1.02);
-    group.add(lip);
-  }
-
-  if (extras.includes("antenna")) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.7, 6), toon(PAPER.trim));
-    pole.position.set(w * 0.22, h + roofRise + 0.8, 0);
-    group.add(pole);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), flat(accent.base));
-    tip.position.set(w * 0.22, h + roofRise + 1.68, 0);
-    group.add(tip);
-  }
-
-  if (extras.includes("clock")) {
-    const clockTexture = createClockTexture();
-    const face = new THREE.Mesh(new THREE.CircleGeometry(0.86, 28), new THREE.MeshBasicMaterial({ map: clockTexture, transparent: true, toneMapped: false }));
-    face.position.set(0, h * 0.74, d / 2 + 0.06);
-    group.add(face);
-  }
-
-  if (extras.includes("flag")) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.9, 6), toon(PAPER.trim));
-    pole.position.set(w * 0.32, h + roofRise + 0.95, 0);
-    group.add(pole);
-    const flagShape = new THREE.Shape();
-    flagShape.moveTo(0, 0);
-    flagShape.lineTo(0.95, -0.3);
-    flagShape.lineTo(0, -0.6);
-    flagShape.closePath();
-    const flag = new THREE.Mesh(new THREE.ShapeGeometry(flagShape), toon(accent.base, THREE.DoubleSide));
-    flag.position.set(w * 0.32, h + roofRise + 1.55, 0);
-    group.add(flag);
-  }
-
-  if (extras.includes("board")) {
-    const boardTexture = createBoardTexture();
-    const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 1.69), new THREE.MeshBasicMaterial({ map: boardTexture, toneMapped: false }));
-    panel.position.set(-w * 0.33, 1.02, d / 2 + 0.08);
-    group.add(panel);
-    const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.84, 0.08), toon(PAPER.trunk));
-    boardFrame.position.set(-w * 0.33, 1.02, d / 2 + 0.02);
-    group.add(boardFrame);
-  }
-
-  if (extras.includes("columns")) {
-    const columnGeometry = new THREE.CylinderGeometry(0.16, 0.19, h * 0.78, 10);
-    [-0.42, -0.24, 0.24, 0.42].forEach((ratio) => {
-      const column = shadowed(new THREE.Mesh(columnGeometry, toon(PAPER.wall)));
-      column.position.set(w * ratio, h * 0.39, d / 2 + 0.62);
-      group.add(column);
-    });
-    const porch = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w * 0.98, 0.18, 1.1), toon(PAPER.roofSide)));
-    porch.position.set(0, h * 0.79, d / 2 + 0.58);
-    group.add(porch);
-  }
-
-  if (extras.includes("lantern")) {
-    const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.34), toon(PAPER.trim));
-    bracket.position.set(w * 0.36, 2.18, d / 2 + 0.16);
-    group.add(bracket);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), flat(0xffd98a));
-    bulb.position.set(w * 0.36, 2.06, d / 2 + 0.32);
-    group.add(bulb);
-  }
-
-  if (extras.includes("tank")) {
-    const tank = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.9, 12), toon(PAPER.wallSide)));
-    tank.position.set(w * 0.22, h + 0.45, -d * 0.22);
-    group.add(tank);
-  }
-
   const highlight = new THREE.Mesh(
     new THREE.RingGeometry(Math.max(w, d) * 0.62, Math.max(w, d) * 0.72, 40),
     new THREE.MeshBasicMaterial({ color: accent.base, transparent: true, opacity: 0, side: THREE.DoubleSide, toneMapped: false }),
@@ -354,7 +212,7 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
     def,
     group,
     hitTargets,
-    height: h + roofRise,
+    height: h + 2.6,
     doorPoint: new THREE.Vector3(0, 0, d / 2 + 2.3),
     setActive(active: boolean) {
       highlightMaterial.opacity = active ? 0.85 : 0;

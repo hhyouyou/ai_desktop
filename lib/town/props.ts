@@ -5,7 +5,7 @@
 
 import * as THREE from "three";
 import { PAPER, type AccentKey, ACCENT } from "./data";
-import { flat, shadowed, toon } from "./build";
+import { flat, shadowed, toon } from "./materials";
 
 /** 确定性伪随机，保证每次刷新长一样 */
 function hash(seed: number): number {

@@ -49,9 +49,9 @@ import {
   createStreet,
   createTree,
   createYard,
-  disposeSharedMaterials,
   type BuildingHandle,
 } from "./build";
+import { disposeSharedMaterials } from "./materials";
 import {
   createBarrel,
   createBicycle,
@@ -109,7 +109,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     const w = container.clientWidth;
     const h = container.clientHeight;
     const aspect = w / Math.max(h, 1);
-    const halfHeight = Math.max(31, 48 / aspect);
+    const halfHeight = Math.max(28, 44 / aspect);
     camera.left = -halfHeight * aspect;
     camera.right = halfHeight * aspect;
     camera.top = halfHeight;
@@ -516,12 +516,75 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   let frame = 0;
   let lastTime = performance.now();
   let running = true;
+  let elapsed = 0;
+
+  type AnimatedNode = {
+    object: THREE.Object3D;
+    spinY?: number;
+    floatY?: { baseY: number; amp: number; speed: number; phase: number };
+    orbit?: { x: number; z: number; radius: number; speed: number; phase: number };
+    swing?: { amp: number; speed: number };
+    pulse?: { speed: number; phase: number; baseScale: number };
+  };
+
+  const animated: AnimatedNode[] = [];
+  scene.traverse((object) => {
+    const data = object.userData;
+    if (data.spinY || data.floatY || data.orbit || data.swing || data.pulse) {
+      animated.push({
+        object,
+        spinY: data.spinY,
+        floatY: data.floatY,
+        orbit: data.orbit,
+        swing: data.swing,
+        pulse: data.pulse,
+      });
+    }
+  });
+
+  function updateAnimated(dt: number): void {
+    elapsed += dt;
+    for (const node of animated) {
+      const object = node.object;
+
+      if (node.spinY) {
+        object.rotation.y += node.spinY * dt;
+      }
+
+      if (node.floatY) {
+        const { baseY, amp, speed, phase } = node.floatY;
+        object.position.y = baseY + Math.sin(elapsed * speed + phase) * amp;
+      }
+
+      if (node.orbit) {
+        const { x, z, radius, speed, phase } = node.orbit;
+        const angle = elapsed * speed + phase;
+        object.position.x = x + Math.cos(angle) * radius;
+        object.position.z = z + Math.sin(angle) * radius;
+      }
+
+      if (node.swing) {
+        object.rotation.z = Math.sin(elapsed * node.swing.speed) * node.swing.amp;
+      }
+
+      if (node.pulse) {
+        const { speed, phase, baseScale } = node.pulse;
+        const t = (elapsed * speed + phase) % 1;
+        object.scale.setScalar(baseScale * (1 + t * 1.7));
+        const material = (object as THREE.Mesh).material;
+        if (material instanceof THREE.MeshBasicMaterial) {
+          material.opacity = Math.max(0, 0.5 * (1 - t));
+        }
+      }
+    }
+  }
 
   function tick(now: number): void {
     if (!running) return;
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
     updateActor(dt);
+    updateAnimated(dt);
     renderer.render(scene, camera);
     frame = requestAnimationFrame(tick);
   }
