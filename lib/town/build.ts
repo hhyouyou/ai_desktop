@@ -12,6 +12,7 @@ import {
   type AccentKey,
   type BuildingDef,
   type DecorDef,
+  type StreetDef,
   type StreetKind,
 } from "./data";
 import { createBoardTexture, createClockTexture, createSignTexture } from "./textures";
@@ -522,94 +523,54 @@ export function createCharacter(): THREE.Group {
 
 /* ------------------------------ 街道 ------------------------------ */
 
-/** 沿曲线扫出一条带状路面（含 UV，可贴纹理） */
-function makeRibbon(
-  curve: THREE.CatmullRomCurve3,
-  offset: number,
-  width: number,
-  y: number,
-  material: THREE.Material,
-  divisions: number,
-): THREE.Mesh {
-  const positions: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-
-  for (let i = 0; i <= divisions; i += 1) {
-    const t = i / divisions;
-    const point = curve.getPointAt(t);
-    const tangent = curve.getTangentAt(t);
-    const nx = -tangent.z;
-    const nz = tangent.x;
-    const len = Math.hypot(nx, nz) || 1;
-    const normX = nx / len;
-    const normZ = nz / len;
-
-    const cx = point.x + normX * offset;
-    const cz = point.z + normZ * offset;
-
-    positions.push(cx - (normX * width) / 2, y, cz - (normZ * width) / 2);
-    positions.push(cx + (normX * width) / 2, y, cz + (normZ * width) / 2);
-    uvs.push(0, t * 14, 1, t * 14);
-  }
-
-  for (let i = 0; i < divisions; i += 1) {
-    const a = i * 2;
-    const b = a + 1;
-    const c = a + 2;
-    const d = a + 3;
-    indices.push(a, c, b, b, c, d);
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.receiveShadow = true;
-  return mesh;
-}
-
-export function createStreet(points: [number, number][], width: number, kind: StreetKind): THREE.Group {
+export function createStreet(street: StreetDef): THREE.Group {
   const group = new THREE.Group();
-  const curve = new THREE.CatmullRomCurve3(
-    points.map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
-    "catmullrom",
-    0.45,
-  );
-  const length = curve.getLength();
-  const divisions = Math.max(30, Math.min(140, Math.round(length * 2.2)));
+  const dx = street.x2 - street.x1;
+  const dz = street.z2 - street.z1;
+  const length = Math.hypot(dx, dz);
+  const angle = Math.atan2(dx, dz);
+  const cx = (street.x1 + street.x2) / 2;
+  const cz = (street.z1 + street.z2) / 2;
 
-  group.add(makeRibbon(curve, 0, width, 0.065, toon(PAPER.road, THREE.DoubleSide), divisions));
+  const road = new THREE.Mesh(new THREE.BoxGeometry(street.width, 0.08, length), toon(PAPER.road));
+  road.position.set(cx, 0.04, cz);
+  road.rotation.y = angle;
+  road.receiveShadow = true;
+  group.add(road);
 
-  const swWidth = kind === "main" ? 1.05 : 0.8;
-  const walkMaterial = toon(PAPER.sidewalk, THREE.DoubleSide);
-  const curbMaterial = toon(0xb3a68c, THREE.DoubleSide);
+  const swWidth = street.kind === "main" ? 1.05 : street.kind === "cross" ? 0.85 : 0.72;
+  const normalX = Math.cos(angle);
+  const normalZ = -Math.sin(angle);
 
   [-1, 1].forEach((side) => {
-    group.add(makeRibbon(curve, side * (width / 2 + swWidth / 2 + 0.05), swWidth, 0.115, walkMaterial, divisions));
-    group.add(makeRibbon(curve, side * (width / 2 + 0.085), 0.17, 0.09, curbMaterial, divisions));
+    const offset = street.width / 2 + swWidth / 2 + 0.06;
+    const walk = new THREE.Mesh(new THREE.BoxGeometry(swWidth, 0.17, length), toon(PAPER.sidewalk));
+    walk.position.set(cx + normalX * offset * side, 0.085, cz + normalZ * offset * side);
+    walk.rotation.y = angle;
+    walk.receiveShadow = true;
+    group.add(walk);
+
+    const curb = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.13, length), toon(0xb3a68c));
+    const curbOffset = street.width / 2 + 0.09;
+    curb.position.set(cx + normalX * curbOffset * side, 0.065, cz + normalZ * curbOffset * side);
+    curb.rotation.y = angle;
+    group.add(curb);
   });
 
-  if (kind !== "lane") {
-    const dashes = Math.floor(length / 3.4);
+  if (street.kind !== "lane") {
     const dashMaterial = new THREE.MeshBasicMaterial({
       color: 0xf2ead4,
       transparent: true,
-      opacity: 0.62,
+      opacity: 0.58,
       toneMapped: false,
-      side: THREE.DoubleSide,
     });
+    const step = 3.6;
+    const dashes = Math.floor(length / step);
     for (let i = 1; i < dashes; i += 2) {
-      const t = i / dashes;
-      const point = curve.getPointAt(t);
-      const tangent = curve.getTangentAt(t);
-      const dash = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 1.35), dashMaterial);
-      dash.position.set(point.x, 0.082, point.z);
-      dash.rotation.y = Math.atan2(tangent.x, tangent.z);
+      const t = (i - (dashes - 1) / 2) * step;
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 1.5), dashMaterial);
+      dash.position.set(cx + (dx / length) * t, 0.086, cz + (dz / length) * t);
+      dash.rotation.y = angle;
       group.add(dash);
     }
   }
@@ -617,18 +578,16 @@ export function createStreet(points: [number, number][], width: number, kind: St
   return group;
 }
 
-/** 泥土小径：比街道窄，颜色更接近地面 */
-export function createPath(points: [number, number][], width = 1.15): THREE.Group {
-  const group = new THREE.Group();
-  const curve = new THREE.CatmullRomCurve3(
-    points.map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
-    "catmullrom",
-    0.5,
-  );
-  const divisions = Math.max(20, Math.min(90, Math.round(curve.getLength() * 2)));
-  group.add(makeRibbon(curve, 0, width, 0.075, toon(0xdfd2b6, THREE.DoubleSide), divisions));
-  return group;
+/** 泥土小径：直线，比街道窄，颜色更接近地面 */
+export function createPath(x1: number, z1: number, x2: number, z2: number, width = 1.2): THREE.Mesh {
+  const dx = x2 - x1;
+  const dz = z2 - z1;
+  const length = Math.hypot(dx, dz);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 0.06, length), toon(0xdfd2b6));
+  mesh.position.set((x1 + x2) / 2, 0.03, (z1 + z2) / 2);
+  mesh.rotation.y = Math.atan2(dx, dz);
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 /** 后院草地：圆角矩形，比地面高一档 */

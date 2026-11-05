@@ -108,7 +108,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     const w = container.clientWidth;
     const h = container.clientHeight;
     const aspect = w / Math.max(h, 1);
-    const halfHeight = Math.max(26, 40 / aspect);
+    const halfHeight = Math.max(31, 48 / aspect);
     camera.left = -halfHeight * aspect;
     camera.right = halfHeight * aspect;
     camera.top = halfHeight;
@@ -123,13 +123,13 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(hemisphere);
 
   const sun = new THREE.DirectionalLight(0xfff2d8, 2.1);
-  sun.position.set(34, 52, 24);
+  sun.position.set(40, 60, 28);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -38;
-  sun.shadow.camera.right = 38;
-  sun.shadow.camera.top = 38;
-  sun.shadow.camera.bottom = -38;
+  sun.shadow.camera.left = -44;
+  sun.shadow.camera.right = 44;
+  sun.shadow.camera.top = 44;
+  sun.shadow.camera.bottom = -44;
   sun.shadow.camera.near = 1;
   sun.shadow.camera.far = 150;
   sun.shadow.bias = -0.0006;
@@ -143,27 +143,27 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   scene.add(createGround(TOWN_SIZE));
 
   STREETS.forEach((street) => {
-    scene.add(createStreet(street.points, street.width, street.kind));
+    scene.add(createStreet(street));
   });
 
   PATHS.forEach((path) => {
-    scene.add(createPath(path.points, path.width));
+    scene.add(createPath(path.x1, path.z1, path.x2, path.z2, path.width));
   });
 
   YARDS.forEach((yard) => {
-    scene.add(createYard(yard.x, yard.z, yard.w, yard.d));
+    scene.add(createYard(yard.x, yard.z, yard.w + 1.2, yard.d + 0.8));
   });
 
   // 两个主路口各铺四条斑马线
   const crossings: [number, number, number, "x" | "z"][] = [
-    [-1.5, -10.4, 5.2, "x"],
-    [-1.5, -4.6, 5.2, "x"],
-    [-5.4, -7.5, 4, "z"],
-    [2.4, -7.5, 4, "z"],
-    [-1.5, 6.6, 5.2, "x"],
-    [-1.5, 12.4, 5.2, "x"],
-    [-5.4, 9.5, 4, "z"],
-    [2.4, 9.5, 4, "z"],
+    [-1.9, -11.6, 5.4, "x"],
+    [-1.9, -6.6, 5.4, "x"],
+    [-6.2, -9.1, 4.2, "z"],
+    [2.4, -9.1, 4.2, "z"],
+    [-1.6, 9.9, 5.4, "x"],
+    [-1.6, 14.6, 5.4, "x"],
+    [-6, 12.2, 4.2, "z"],
+    [2.6, 12.2, 4.2, "z"],
   ];
   crossings.forEach(([x, z, span, along]) => {
     scene.add(createCrosswalk(x, z, span, along));
@@ -199,10 +199,29 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   BENCHES.forEach((bench) => scene.add(createBench(bench.x, bench.z, bench.rot)));
   PLANTERS.forEach(([x, z]) => scene.add(createPlanter(x, z)));
   STALLS.forEach((stall) => scene.add(createStall(stall.x, stall.z, stall.accent)));
-  scene.add(createMailbox(2.4, -5.8));
+  scene.add(createMailbox(2.6, -5.4));
 
-  // 绿植
-  scene.add(createBushes(BUSHES));
+  // 绿植：手动点位 + 每块草地四角自动补灌木
+  const yardBushes: { x: number; z: number; s: number }[] = [];
+  YARDS.forEach((yard, index) => {
+    const halfW = (yard.w + 1.2) / 2 - 0.75;
+    const halfD = (yard.d + 0.8) / 2 - 0.75;
+    [
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+    ].forEach(([sx, sz], corner) => {
+      if ((index + corner) % 3 === 0) return;
+      yardBushes.push({
+        x: yard.x + sx * halfW,
+        z: yard.z + sz * halfD,
+        s: 0.8 + ((index + corner) % 4) * 0.13,
+      });
+    });
+  });
+
+  scene.add(createBushes([...BUSHES, ...yardBushes]));
   scene.add(createFlowerField(FLOWERS));
 
   const grassSpots: { x: number; z: number; s: number }[] = [];
@@ -235,6 +254,11 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
     scene.add(createTree(x, z, scale));
   });
 
+  YARDS.forEach((yard, index) => {
+    if (yard.w < 5.8 || index % 2 !== 0) return;
+    scene.add(createTree(yard.x + 0.8, yard.z + 0.3, 0.92));
+  });
+
   const pickPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(TOWN_SIZE * 2, TOWN_SIZE * 2),
     new THREE.MeshBasicMaterial({ visible: false }),
@@ -255,7 +279,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   character.scale.setScalar(1.22);
   const actor = {
     group: character,
-    pos: new THREE.Vector3(-1.5, 0, 7.4),
+    pos: new THREE.Vector3(-1.8, 0, 7.6),
     facing: Math.PI,
     path: [] as Point[],
     targetId: null as string | null,
