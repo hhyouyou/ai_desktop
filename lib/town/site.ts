@@ -5,7 +5,7 @@
 
 import * as THREE from "three";
 import { ACCENT, PAPER, type AnnexDef } from "./data";
-import { m, shadowed, spinY, swing, toon } from "./materials";
+import { m, outline, shadowed, spinY, swing, toon } from "./materials";
 import { createBench, createLamp, createPlanter } from "./build";
 import { createFence } from "./props";
 
@@ -179,6 +179,41 @@ function notice(def: AnnexDef): THREE.Group {
   const eave = m(new THREE.BoxGeometry(1.74, 0.07, 0.36), 0x6b533a, 0, 1.95, 0.02);
   eave.rotation.x = -0.13;
   group.add(eave);
+
+  return group;
+}
+
+/** 广场中心的纪念柱：三级基座 + 四棱碑身 + 金顶 */
+function monument(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+
+  const tiers: [number, number, number][] = [
+    [1.7, 0.16, 0.08],
+    [1.32, 0.16, 0.24],
+    [0.96, 0.2, 0.42],
+  ];
+  tiers.forEach(([size, height, y]) => {
+    const tier = shadowed(new THREE.Mesh(new THREE.BoxGeometry(size, height, size), toon(0xb6aa8e)));
+    tier.position.y = y;
+    group.add(tier);
+  });
+
+  // 碑身：四棱台，收在基座上
+  const shaft = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.38, 3.1, 4), toon(0xcdc1a6)));
+  shaft.rotation.y = Math.PI / 4;
+  shaft.position.y = 0.52 + 1.55;
+  group.add(shaft);
+  const shaftEdge = outline(new THREE.CylinderGeometry(0.22, 0.38, 3.1, 4), PAPER.trim, 0.4);
+  shaftEdge.rotation.y = Math.PI / 4;
+  shaftEdge.position.y = shaft.position.y;
+  group.add(shaftEdge);
+
+  // 碑身上的铭牌
+  group.add(m(new THREE.BoxGeometry(0.34, 0.5, 0.03), 0xc4a86a, 0, 1.5, 0.31));
+
+  // 金顶
+  group.add(m(new THREE.SphereGeometry(0.14, 10, 8), 0xd8b464, 0, 3.78, 0));
 
   return group;
 }
@@ -750,6 +785,8 @@ export function createAnnex(def: AnnexDef): THREE.Group {
       return flagpole(def);
     case "notice":
       return notice(def);
+    case "monument":
+      return monument(def);
     default:
       return new THREE.Group();
   }

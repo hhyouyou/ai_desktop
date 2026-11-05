@@ -142,7 +142,7 @@ async function main() {
   fs.writeFileSync(file1, Buffer.from(shot1.data, "base64"));
 
   // 先拉近看工坊院子（此时还没有进入卡片挡住画面）
-  await evaluate(cdp, `window.__town && window.__town.focusOn(-10.4, -31, 3.6)`);
+  await evaluate(cdp, `window.__town && window.__town.focusOn(7.9, 5, 3.4)`);
   await sleep(1600);
   const shot3 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const file3 = path.join(OUT_DIR, "town-03-focus.png");
