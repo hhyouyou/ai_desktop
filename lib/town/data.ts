@@ -250,7 +250,7 @@ export const BUILDINGS: BuildingDef[] = [
     href: "/about",
     desc: "站点说明、外观设置与账号，都在门廊后面",
     x: 6,
-    z: 8,
+    z: 4.5,
     w: 5.6,
     d: 4.2,
     h: 3.8,
@@ -347,7 +347,13 @@ export type AnnexKind =
   | "anvil"
   | "cart"
   | "shelf"
-  | "grindstone";
+  | "grindstone"
+  /* 市政厅 */
+  | "paving"
+  | "plinth"
+  | "topiary"
+  | "flagpole"
+  | "notice";
 
 export type AnnexDef = {
   kind: AnnexKind;
@@ -384,6 +390,30 @@ export const SITES: SiteDef[] = [
       { kind: "anvil", x: -10.4, z: -26.4, rot: 0.1 },
       { kind: "grindstone", x: -7.6, z: -26, rot: 0 },
       { kind: "lamp", x: -6.5, z: -25.6 },
+    ],
+  },
+  {
+    id: "townhall",
+    annexes: [
+      // 石板前广场
+      { kind: "paving", x: 6, z: 8.45, w: 7, d: 3.5 },
+      // 三级石阶
+      { kind: "plinth", x: 6, z: 6.95, w: 5.2, d: 1.2 },
+      // 门口两棵修剪成球的树
+      { kind: "topiary", x: 4.55, z: 7.82 },
+      { kind: "topiary", x: 7.45, z: 7.82 },
+      // 广场四角的球树
+      { kind: "topiary", x: 2.95, z: 7.3 },
+      { kind: "topiary", x: 9.05, z: 7.3 },
+      { kind: "topiary", x: 2.95, z: 9.8 },
+      { kind: "topiary", x: 9.05, z: 9.8 },
+      // 旗杆与公告栏
+      { kind: "flagpole", x: 3.5, z: 8.5, accent: "blue" },
+      { kind: "flagpole", x: 8.5, z: 8.5, accent: "coral" },
+      { kind: "notice", x: 2.8, z: 8.5, rot: Math.PI / 2 },
+      // 面向街道的长椅
+      { kind: "bench", x: 4.3, z: 9.6, rot: 0 },
+      { kind: "bench", x: 7.7, z: 9.6, rot: 0 },
     ],
   },
   {
@@ -552,7 +582,7 @@ export const YARDS: { x: number; z: number; w: number; d: number }[] = [
   { x: -12, z: -8.4, w: 6.6, d: 4.2 },
   { x: -12, z: 6.4, w: 6.4, d: 4 },
   { x: 6.4, z: -9, w: 6.4, d: 3.2 },
-  { x: 6.4, z: 3.2, w: 6, d: 3.6 },
+  { x: 6.4, z: 1.1, w: 6, d: 2 },
   { x: 24, z: -8.6, w: 6, d: 4.2 },
   { x: 24, z: 8.4, w: 6.2, d: 4.4 },
   { x: -12, z: 12.6, w: 6, d: 3 },
@@ -632,7 +662,7 @@ export const FLOWERS: FlowerSpot[] = [
   { x: 3.4, z: -25.2, accent: "violet" },
   { x: 3.6, z: -22.8, accent: "mint" },
   { x: 3, z: -1.8, accent: "coral" },
-  { x: 3.2, z: 4.2, accent: "sun" },
+  { x: 3.4, z: 0.4, accent: "sun" },
   { x: -9.4, z: -1.6, accent: "mint" },
   { x: -9.2, z: 4.4, accent: "violet" },
   { x: -9.4, z: 17.4, accent: "coral" },

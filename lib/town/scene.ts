@@ -98,6 +98,9 @@ const ANNEX_OBSTACLE: Partial<Record<AnnexKind, number>> = {
   cart: 0.95,
   shelf: 0.8,
   grindstone: 0.72,
+  topiary: 0.5,
+  notice: 0.75,
+  flagpole: 0.3,
 };
 
 export function createTownScene(container: HTMLElement, callbacks: TownCallbacks): TownScene {

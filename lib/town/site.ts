@@ -5,9 +5,183 @@
 
 import * as THREE from "three";
 import { ACCENT, PAPER, type AnnexDef } from "./data";
-import { m, shadowed, spinY, toon } from "./materials";
+import { m, shadowed, spinY, swing, toon } from "./materials";
 import { createBench, createLamp, createPlanter } from "./build";
 import { createFence } from "./props";
+
+/* ------------------------------ 市政厅：广场与仪典 ------------------------------ */
+
+/** 石板前广场：方整铺装、分缝、中央圆形石饰 */
+function paving(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  const w = def.w ?? 6;
+  const d = def.d ?? 3;
+
+  const border = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.05, d + 0.5), toon(0xa4977c));
+  border.position.y = 0.025;
+  border.receiveShadow = true;
+  group.add(border);
+
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), toon(0xcfc6ae));
+  slab.position.y = 0.05;
+  slab.receiveShadow = true;
+  group.add(slab);
+
+  // 路缘石：一圈明确的边，把广场从土地里切出来
+  const curbMaterial = toon(0x9c8f74);
+  [-1, 1].forEach((side) => {
+    const long = new THREE.Mesh(new THREE.BoxGeometry(w + 0.34, 0.13, 0.17), curbMaterial);
+    long.position.set(0, 0.065, side * (d / 2 + 0.085));
+    long.receiveShadow = true;
+    group.add(long);
+
+    const short = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.13, d + 0.34), curbMaterial);
+    short.position.set(side * (w / 2 + 0.085), 0.065, 0);
+    short.receiveShadow = true;
+    group.add(short);
+  });
+
+  // 石板分缝
+  const jointMaterial = toon(0xb0a488);
+  for (let x = -w / 2 + 1.4; x < w / 2 - 0.2; x += 1.4) {
+    const line = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.012, d - 0.3), jointMaterial);
+    line.position.set(x, 0.092, 0);
+    group.add(line);
+  }
+  for (let z = -d / 2 + 1.2; z < d / 2 - 0.2; z += 1.2) {
+    const line = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.012, 0.07), jointMaterial);
+    line.position.set(0, 0.092, z);
+    group.add(line);
+  }
+
+  // 中轴石带：从街口直通石阶，一条明确的动线
+  const axisBand = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.014, d - 0.5), toon(0xc4b89c));
+  axisBand.position.set(0, 0.094, 0);
+  axisBand.receiveShadow = true;
+  group.add(axisBand);
+
+  // 两侧收边的窄石带
+  [-1, 1].forEach((side) => {
+    const edgeBand = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.014, d - 0.5), toon(0xd6c8a9));
+    edgeBand.position.set(side * (w / 2 - 0.45), 0.094, 0);
+    group.add(edgeBand);
+  });
+
+  // 中央圆形石饰
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.92, 0.022, 28), toon(0xc9bfa4));
+  disc.position.y = 0.096;
+  disc.receiveShadow = true;
+  group.add(disc);
+
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.72, 0.87, 30), toon(0x9e9078, THREE.DoubleSide));
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.109;
+  group.add(ring);
+
+  return group;
+}
+
+/** 入口三级石阶 */
+function plinth(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  const w = def.w ?? 5;
+  const d = def.d ?? 1.2;
+
+  for (let i = 0; i < 3; i += 1) {
+    const stepWidth = w - i * 0.7;
+    const stepDepth = d - i * (d / 3);
+    const step = shadowed(new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.11, stepDepth), toon(i === 2 ? 0xe4dccb : 0xded5c1)));
+    // 台阶向街道一侧铺开，最高的那级贴着楼
+    step.position.set(0, 0.055 + i * 0.11, d / 2 - stepDepth / 2);
+    group.add(step);
+  }
+
+  return group;
+}
+
+/** 修剪成球的树：方形木花箱 + 一根杆 + 一个球冠 */
+function topiary(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+
+  group.add(m(new THREE.BoxGeometry(0.64, 0.34, 0.64), 0x8a6c47, 0, 0.17, 0));
+  group.add(m(new THREE.BoxGeometry(0.7, 0.06, 0.7), 0x6b533a, 0, 0.34, 0));
+  group.add(m(new THREE.BoxGeometry(0.52, 0.03, 0.52), 0x5d4a33, 0, 0.36, 0));
+
+  group.add(m(new THREE.CylinderGeometry(0.055, 0.072, 0.46, 7), 0x8a6c47, 0, 0.59, 0));
+
+  const crown = m(new THREE.IcosahedronGeometry(0.44, 1), PAPER.leaf, 0, 1.02, 0);
+  crown.scale.set(1, 0.92, 1);
+  group.add(crown);
+
+  return group;
+}
+
+/** 旗杆：石座、杆、顶球、会飘的旗 */
+function flagpole(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  const tone = ACCENT[def.accent ?? "blue"];
+
+  group.add(m(new THREE.CylinderGeometry(0.3, 0.33, 0.06, 8), 0xc4b795, 0, 0.03, 0));
+  group.add(m(new THREE.CylinderGeometry(0.24, 0.28, 0.24, 8), 0xd8cfba, 0, 0.15, 0));
+  group.add(m(new THREE.CylinderGeometry(0.042, 0.052, 3.3, 8), 0xdcd6c6, 0, 1.9, 0));
+  group.add(m(new THREE.SphereGeometry(0.09, 8, 6), 0xd8b464, 0, 3.6, 0));
+
+  const flag = new THREE.Group();
+  flag.position.set(0, 3.3, 0);
+  const cloth = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.04, 0.64, 6, 1),
+    new THREE.MeshBasicMaterial({ color: tone.base, side: THREE.DoubleSide, toneMapped: false }),
+  );
+  cloth.position.set(0.52, -0.34, 0);
+  flag.add(cloth);
+  const stripe = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.04, 0.13),
+    new THREE.MeshBasicMaterial({ color: tone.soft, side: THREE.DoubleSide, toneMapped: false }),
+  );
+  stripe.position.set(0.52, -0.34, 0.004);
+  flag.add(stripe);
+  swing(flag, 0.075, 1.15);
+  group.add(flag);
+
+  return group;
+}
+
+/** 公告栏：立柱、板面、标题条、三张钉着的告示、小雨檐 */
+function notice(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  [-0.62, 0.62].forEach((x) => {
+    group.add(m(new THREE.BoxGeometry(0.1, 1.92, 0.1), 0x6b533a, x, 0.96, 0));
+  });
+
+  group.add(m(new THREE.BoxGeometry(1.52, 0.96, 0.1), 0x8a6c47, 0, 1.34, 0));
+  group.add(m(new THREE.BoxGeometry(1.34, 0.8, 0.03), 0xeee6d4, 0, 1.32, 0.06));
+  group.add(m(new THREE.BoxGeometry(1.34, 0.15, 0.02), 0x4666c4, 0, 1.79, 0.075));
+
+  const notes = [
+    { x: -0.43, y: 1.45, w: 0.34, h: 0.44, c: 0xfbf6ea },
+    { x: 0.01, y: 1.41, w: 0.3, h: 0.5, c: 0xf3e6c8 },
+    { x: 0.44, y: 1.47, w: 0.34, h: 0.4, c: 0xe6edf7 },
+  ];
+  notes.forEach((note, i) => {
+    const paper = m(new THREE.BoxGeometry(note.w, note.h, 0.012), note.c, note.x, note.y, 0.08);
+    paper.rotation.z = (i - 1) * 0.035;
+    group.add(paper);
+    group.add(m(new THREE.SphereGeometry(0.024, 6, 4), 0xc0503a, note.x, note.y + note.h / 2 - 0.05, 0.095));
+  });
+
+  const eave = m(new THREE.BoxGeometry(1.74, 0.07, 0.36), 0x6b533a, 0, 1.95, 0.02);
+  eave.rotation.x = -0.13;
+  group.add(eave);
+
+  return group;
+}
 
 /* ------------------------------ 工坊：木工与铁活 ------------------------------ */
 
@@ -566,6 +740,16 @@ export function createAnnex(def: AnnexDef): THREE.Group {
       return shelf(def);
     case "grindstone":
       return grindstone(def);
+    case "paving":
+      return paving(def);
+    case "plinth":
+      return plinth(def);
+    case "topiary":
+      return topiary(def);
+    case "flagpole":
+      return flagpole(def);
+    case "notice":
+      return notice(def);
     default:
       return new THREE.Group();
   }

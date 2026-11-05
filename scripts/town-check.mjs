@@ -142,15 +142,15 @@ async function main() {
   fs.writeFileSync(file1, Buffer.from(shot1.data, "base64"));
 
   // 先拉近看工坊院子（此时还没有进入卡片挡住画面）
-  await evaluate(cdp, `window.__town && window.__town.focusOn(-9.4, -23, 5)`);
+  await evaluate(cdp, `window.__town && window.__town.focusOn(6, 8.2, 4.2)`);
   await sleep(1600);
   const shot3 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
-  const file3 = path.join(OUT_DIR, "town-03-workshop.png");
+  const file3 = path.join(OUT_DIR, "town-03-focus.png");
   fs.writeFileSync(file3, Buffer.from(shot3.data, "base64"));
   await evaluate(cdp, `window.__town && window.__town.resetView()`);
   await sleep(600);
 
-  await evaluate(cdp, `window.__town && window.__town.goToBuilding('workshop')`);
+  await evaluate(cdp, `window.__town && window.__town.goToBuilding('townhall')`);
 
   let arrived = { card: false, name: null, label: null };
   let state = null;
