@@ -137,7 +137,7 @@ export const BUILDINGS: BuildingDef[] = [
     label: "AI 写作",
     href: "/ai/app/writing",
     desc: "标题、摘要、润色、大纲，文字在这里成形",
-    x: -15,
+    x: -17,
     z: -20,
     w: 6.2,
     d: 5.89,
@@ -186,7 +186,7 @@ export const BUILDINGS: BuildingDef[] = [
     href: "/daily-brief",
     desc: "每天一期，把热榜整理成三分钟能听完的要点",
     x: 30,
-    z: -30,
+    z: -33.6,
     w: 5.89,
     d: 5.89,
     h: 7.19,
@@ -217,8 +217,8 @@ export const BUILDINGS: BuildingDef[] = [
     label: "网址导航",
     href: "/menus",
     desc: "精选站点收藏夹，本质是一块指路牌",
-    x: -24,
-    z: 21,
+    x: -13,
+    z: 33,
     w: 5.27,
     d: 4.96,
     h: 3.91,
@@ -266,7 +266,7 @@ export const BUILDINGS: BuildingDef[] = [
     href: "/drawing/create",
     desc: "文字变图片，画廊与我的创作都在里屋",
     x: 26,
-    z: 21,
+    z: 23,
     w: 7.44,
     d: 6.82,
     h: 5.62,
@@ -288,7 +288,7 @@ export const BUILDINGS: BuildingDef[] = [
     h: 4.06,
     roof: "flat",
     accent: "mint",
-    facing: "east",
+    facing: "south",
     extras: ["board", "awning"],
   },
   {
@@ -367,7 +367,22 @@ export type AnnexKind =
   | "wire"
   | "batteryrack"
   | "telegraphdesk"
-  | "crates";
+  | "crates"
+  /* 打字机铺 */
+  | "typewriterdesk"
+  | "paperrack"
+  | "wastebin"
+  /* 广播站 */
+  | "booth"
+  | "speakerstand"
+  /* 地图亭 */
+  | "signcluster"
+  | "luggage"
+  /* 画室 */
+  | "easel"
+  | "plaster"
+  /* 任务板 */
+  | "noticewall";
 
 export type AnnexDef = {
   kind: AnnexKind;
@@ -463,6 +478,67 @@ export const SITES: SiteDef[] = [
       { kind: "stele", x: -36.4, z: 2.7, rot: 0.5 },
       { kind: "bench", x: -33.5, z: 3.9, rot: Math.PI },
       { kind: "lamp", x: -37.5, z: -0.6 },
+    ],
+  },
+  {
+    id: "typewriter",
+    annexes: [
+      // 门前的小院：主楼西移之后才腾出这四米
+      { kind: "pad", x: -11.9, z: -20, w: 4, d: 5.4 },
+      { kind: "typewriterdesk", x: -12.7, z: -21.4, rot: Math.PI / 2 },
+      // 靠街的晾纸架
+      { kind: "paperrack", x: -10.6, z: -21.6, rot: Math.PI / 2, accent: "blue" },
+      { kind: "wastebin", x: -13, z: -18.4 },
+      { kind: "crates", x: -10.4, z: -18.3, rot: 0.2 },
+    ],
+  },
+  {
+    id: "radio",
+    annexes: [
+      // 播音亭与试音的地方
+      { kind: "pad", x: 30, z: -27.8, w: 6, d: 5.2 },
+      { kind: "booth", x: 31.5, z: -28.2, rot: 0, accent: "sky" },
+      { kind: "speakerstand", x: 27.5, z: -26.9, rot: 0.4 },
+      { kind: "crates", x: 32.8, z: -25.8, rot: -0.2 },
+      { kind: "bench", x: 27.4, z: -29.7, rot: 0.3 },
+      { kind: "lamp", x: 33.3, z: -30.2 },
+    ],
+  },
+  {
+    id: "kiosk",
+    annexes: [
+      // 驿站：搬到镇南口之后才有地方立这一组指路牌
+      { kind: "pad", x: -8.2, z: 33, w: 4, d: 5 },
+      // 路牌挪到院子南端，别挡住进门那条线
+      { kind: "signcluster", x: -8.6, z: 35 },
+      { kind: "luggage", x: -9.5, z: 31.6, rot: 0.3 },
+      { kind: "bench", x: -7.3, z: 33.2, rot: -Math.PI / 2 },
+      { kind: "lamp", x: -10, z: 30.9 },
+    ],
+  },
+  {
+    id: "atelier",
+    annexes: [
+      // 露天写生场
+      { kind: "pad", x: 26, z: 29.2, w: 6.8, d: 5.2 },
+      { kind: "easel", x: 24.3, z: 28.6, rot: 0.5, accent: "coral" },
+      { kind: "easel", x: 27.8, z: 29, rot: -0.45, accent: "mint" },
+      { kind: "plaster", x: 25.9, z: 31, rot: 2.9 },
+      { kind: "paperrack", x: 28.6, z: 27.3, rot: Math.PI / 2, accent: "coral" },
+      { kind: "barrels", x: 22.9, z: 27.2, rot: 0.3 },
+      { kind: "bench", x: 23.6, z: 31.4, rot: 0.2 },
+    ],
+  },
+  {
+    id: "board",
+    annexes: [
+      // 任务墙：一整面插满便签的板子，正对门口
+      { kind: "pad", x: -15, z: 6.4, w: 5.4, d: 7.4 },
+      { kind: "noticewall", x: -15, z: 8.4, rot: 0, w: 3.4 },
+      { kind: "notice", x: -15.6, z: 4.4, rot: 0 },
+      { kind: "bench", x: -12.8, z: 6, rot: -Math.PI / 2 },
+      { kind: "crates", x: -17.4, z: 5, rot: 0.2 },
+      { kind: "lamp", x: -12.6, z: 9.6 },
     ],
   },
   {
@@ -616,7 +692,7 @@ export const STREET_TREES: [number, number, number][] = [
   [-39.25, -7.5, 1.05],
   [-39.25, 1.25, 1.1],
   [-39.25, 9.25, 0.95],
-  [20.75, -23.25, 1.05],
+  [19.5, -22.3, 1.05],
   [21, -5, 0.95],
   [20.75, 6.25, 1.1],
   [21, 23, 1],
@@ -648,7 +724,7 @@ export const YARDS: { x: number; z: number; w: number; d: number }[] = [
   { x: 7.5, z: -36.8, w: 7, d: 2.6 },
   { x: 30, z: -36.4, w: 5.5, d: 3 },
   { x: -15, z: -10.5, w: 7.5, d: 11 },
-  { x: -15, z: 10.5, w: 7.5, d: 9.5 },
+  { x: -21.4, z: 7, w: 5, d: 8 },
   { x: -33.5, z: -9.8, w: 7, d: 3.2 },
   { x: -34, z: 12, w: 7.5, d: 5.5 },
   { x: 7.5, z: -8, w: 8, d: 6 },
@@ -661,7 +737,7 @@ export const BUSHES: PropSpot[] = [
   { x: -23.25, z: -26.75, s: 0.95 },
   { x: -10.25, z: -34.5, s: 1.1 },
   { x: -10.25, z: -22.5, s: 1 },
-  { x: -19.25, z: -23, s: 1.15 },
+  { x: -22.6, z: -23.2, s: 1.15 },
   { x: -10.5, z: -16.5, s: 0.95 },
   { x: 3, z: -34.5, s: 1.1 },
   { x: 12.25, z: -34.25, s: 1 },
@@ -671,7 +747,7 @@ export const BUSHES: PropSpot[] = [
   { x: 12.5, z: -23, s: 1.1 },
   { x: 25.5, z: -34.5, s: 1.05 },
   { x: 34.5, z: -34.25, s: 0.95 },
-  { x: 25.25, z: -24.5, s: 1.1 },
+  { x: 19.3, z: -24.6, s: 1.1 },
   { x: 35.75, z: -23, s: 1 },
   { x: -38, z: -31.75, s: 1.05 },
   { x: -31.75, z: -31.5, s: 0.95 },
@@ -691,7 +767,7 @@ export const BUSHES: PropSpot[] = [
   { x: -19.75, z: 13, s: 0.95 },
   { x: -10.25, z: 13.25, s: 1.05 },
   { x: -19.5, z: 23, s: 1 },
-  { x: -10.5, z: 33.25, s: 1.15 },
+  { x: -17.3, z: 31.2, s: 1.15 },
   { x: 2.75, z: -5.5, s: 1.1 },
   { x: 12.5, z: -5.25, s: 1 },
   { x: 2.3, z: 6.6, s: 0.95 },
@@ -731,7 +807,7 @@ export const FLOWERS: FlowerSpot[] = [
   { x: -11.75, z: -2, accent: "mint" },
   { x: -11.5, z: 5.5, accent: "violet" },
   { x: -11.75, z: 21.75, accent: "coral" },
-  { x: -11, z: 32, accent: "sun" },
+  { x: -16.9, z: 34.5, accent: "sun" },
   { x: 5.25, z: 27.5, accent: "mint" },
   { x: 24.4, z: 2.75, accent: "coral" },
   { x: 35, z: 3, accent: "violet" },
@@ -757,7 +833,7 @@ export const BICYCLES: PlacedProp[] = [
   { x: 14.25, z: -18, rot: 0 },
   { x: -19.25, z: 28, rot: Math.PI / 2 },
   { x: 13, z: 7.5, rot: Math.PI / 2 },
-  { x: 31.6, z: 34, rot: 0 },
+  { x: 29.4, z: 36.6, rot: 0 },
 ];
 
 export const CLOTHESLINES: PlacedProp[] = [
@@ -787,9 +863,9 @@ export const POTS: { x: number; z: number; accent: AccentKey }[] = [
   { x: 2.55, z: -32.5, accent: "sun" },
   { x: -11.5, z: -18.25, accent: "violet" },
   { x: 2.55, z: -18.25, accent: "mint" },
-  { x: -11.25, z: 35.75, accent: "coral" },
+  { x: -17.4, z: 36.4, accent: "coral" },
   { x: 4.75, z: 15.75, accent: "sun" },
-  { x: 21.75, z: -20.5, accent: "mint" },
+  { x: 29.4, z: -19.9, accent: "mint" },
 ];
 
 export const BARRELS: { x: number; z: number }[] = [

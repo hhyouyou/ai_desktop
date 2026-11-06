@@ -4,8 +4,8 @@
  */
 
 import * as THREE from "three";
-import { ACCENT, PAPER, type AnnexDef } from "./data";
-import { m, outline, shadowed, spinY, swing, toon } from "./materials";
+import { ACCENT, PAPER, type AccentKey, type AnnexDef } from "./data";
+import { getGradientMap, m, outline, shadowed, spinY, swing, toon } from "./materials";
 import { createBench, createLamp, createPlanter } from "./build";
 import { createCrates, createFence } from "./props";
 
@@ -1043,6 +1043,431 @@ function well(def: AnnexDef): THREE.Group {
   return group;
 }
 
+/* ------------------------------ 打字机铺：文稿 ------------------------------ */
+
+/** 打字机台：桌面、四腿、三排键的打字机、滚筒与纸、一把椅子 */
+function typewriterdesk(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  const top = 0.84;
+  group.add(m(new THREE.BoxGeometry(1.66, 0.11, 0.9), 0x7a5334, 0, top, 0));
+  [
+    [-0.7, -0.34],
+    [0.7, -0.34],
+    [-0.7, 0.34],
+    [0.7, 0.34],
+  ].forEach(([x, z]) => {
+    group.add(m(new THREE.BoxGeometry(0.1, top, 0.1), 0x8a6c47, x, top / 2, z));
+  });
+  group.add(m(new THREE.BoxGeometry(1.44, 0.05, 0.74), 0x8a6c47, 0, 0.3, 0));
+
+  // 机身
+  group.add(m(new THREE.BoxGeometry(0.66, 0.19, 0.48), 0x3f3a36, -0.18, top + 0.15, 0.01));
+  group.add(m(new THREE.BoxGeometry(0.7, 0.05, 0.52), 0x2c2825, -0.18, top + 0.26, 0.01));
+
+  // 三排键，越靠后越矮
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      group.add(
+        m(
+          new THREE.CylinderGeometry(0.026, 0.026, 0.022, 6),
+          0xe8ded0,
+          -0.44 + col * 0.078,
+          top + 0.2 - row * 0.038,
+          0.17 - row * 0.05,
+        ),
+      );
+    }
+  }
+
+  // 滚筒与插着的纸
+  const roller = m(new THREE.CylinderGeometry(0.05, 0.05, 0.62, 10), 0x2c2825, -0.18, top + 0.32, -0.16);
+  roller.rotation.z = Math.PI / 2;
+  group.add(roller);
+  const sheet = m(new THREE.BoxGeometry(0.44, 0.36, 0.012), 0xf6efdd, -0.18, top + 0.5, -0.19);
+  sheet.rotation.x = 0.12;
+  group.add(sheet);
+
+  // 椅子
+  const chairX = 0.62;
+  const chairZ = 0.66;
+  group.add(m(new THREE.BoxGeometry(0.42, 0.06, 0.42), 0x9c7a52, chairX, 0.46, chairZ));
+  group.add(m(new THREE.BoxGeometry(0.42, 0.5, 0.06), 0x9c7a52, chairX, 0.72, chairZ + 0.18));
+  [
+    [-0.16, -0.16],
+    [0.16, -0.16],
+    [-0.16, 0.16],
+    [0.16, 0.16],
+  ].forEach(([dx, dz]) => {
+    group.add(m(new THREE.BoxGeometry(0.05, 0.46, 0.05), 0x8a6c47, chairX + dx, 0.23, chairZ + dz));
+  });
+
+  return group;
+}
+
+/** 晾纸架：两根立柱、两道绳、夹着的稿纸与画稿 */
+function paperrack(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+  const w = def.w ?? 1.9;
+  const h = 1.98;
+  const tone = ACCENT[def.accent ?? "sun"];
+
+  [-w / 2, w / 2].forEach((x) => {
+    group.add(m(new THREE.BoxGeometry(0.09, h, 0.09), 0x6b533a, x, h / 2, 0));
+    group.add(m(new THREE.BoxGeometry(0.26, 0.08, 0.36), 0x7d6142, x, 0.04, 0));
+  });
+  group.add(m(new THREE.BoxGeometry(w + 0.14, 0.07, 0.07), 0x7d6142, 0, h - 0.02, 0));
+
+  const sheets = [0xfbf6ea, tone.soft, 0xf2e6cd, 0xe6edf7, 0xfbf6ea, tone.soft, 0xfaf1de];
+  [1.7, 1.22].forEach((y, row) => {
+    group.add(m(new THREE.BoxGeometry(w, 0.02, 0.02), 0xc8b48c, 0, y, 0));
+    const count = row === 0 ? 5 : 4;
+    for (let i = 0; i < count; i += 1) {
+      const x = -w / 2 + (w / (count + 1)) * (i + 1);
+      const paperH = 0.32 + jitter(i + row * 5) * 0.12;
+      const paper = m(
+        new THREE.BoxGeometry(0.26, paperH, 0.012),
+        sheets[(i + row * 3) % sheets.length],
+        x,
+        y - paperH / 2 - 0.02,
+        0.02,
+      );
+      paper.rotation.z = (jitter(i + 7) - 0.5) * 0.07;
+      group.add(paper);
+      group.add(m(new THREE.BoxGeometry(0.05, 0.07, 0.035), 0x8a6c47, x, y + 0.02, 0.02));
+    }
+  });
+
+  return group;
+}
+
+/** 废纸篓：铁皮桶，一团纸卡在桶口，几团落在脚边 */
+function wastebin(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+
+  group.add(m(new THREE.CylinderGeometry(0.24, 0.19, 0.52, 12), 0x8a8b86, 0, 0.26, 0));
+  group.add(m(new THREE.CylinderGeometry(0.255, 0.255, 0.05, 12), 0x6f706b, 0, 0.51, 0));
+  group.add(m(new THREE.CylinderGeometry(0.225, 0.225, 0.04, 12), 0x4a4b47, 0, 0.52, 0));
+
+  const balls: [number, number, number, number][] = [
+    [0.04, 0.55, -0.02, 0.11],
+    [0.34, 0.09, 0.2, 0.1],
+    [-0.3, 0.08, 0.14, 0.09],
+    [0.1, 0.07, 0.33, 0.075],
+  ];
+  balls.forEach(([x, y, z, r], i) => {
+    const ball = m(new THREE.IcosahedronGeometry(r, 0), 0xf6f0e0, x, y, z);
+    ball.rotation.set(jitter(i * 13) * 2, jitter(i * 29) * 2, jitter(i * 7) * 2);
+    group.add(ball);
+  });
+
+  return group;
+}
+
+/* ------------------------------ 广播站：播音 ------------------------------ */
+
+/** 播音亭：木地板 + 三面玻璃 + 平顶 + 「播音中」的红灯 */
+function booth(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+  const tone = ACCENT[def.accent ?? "sky"];
+  // 玻璃要能看见亭子里的话筒，所以用半透明，不用不透明的卡通材质
+  const glassMaterial = new THREE.MeshToonMaterial({
+    color: 0xb4d2d8,
+    gradientMap: getGradientMap(),
+    transparent: true,
+    opacity: 0.52,
+    side: THREE.DoubleSide,
+  });
+
+  group.add(m(new THREE.BoxGeometry(2.3, 0.16, 2.3), 0xb0a488, 0, 0.08, 0));
+  // 木地板
+  group.add(m(new THREE.BoxGeometry(2.08, 0.04, 2.08), 0xc9a97e, 0, 0.18, 0));
+  for (let i = 0; i < 5; i += 1) {
+    group.add(m(new THREE.BoxGeometry(0.02, 0.005, 2.06), 0xa9855b, -0.82 + i * 0.41, 0.205, 0));
+  }
+
+  [
+    [-0.98, -0.98],
+    [0.98, -0.98],
+    [-0.98, 0.98],
+    [0.98, 0.98],
+  ].forEach(([x, z]) => {
+    group.add(m(new THREE.BoxGeometry(0.14, 2.28, 0.14), 0x7d6142, x, 1.2, z));
+  });
+
+  // 下半截木裙
+  [
+    { w: 1.9, d: 0.07, x: 0, z: -0.98 },
+    { w: 0.07, d: 1.9, x: -0.98, z: 0 },
+    { w: 0.07, d: 1.9, x: 0.98, z: 0 },
+  ].forEach((spec) => {
+    group.add(m(new THREE.BoxGeometry(spec.w, 0.72, spec.d), 0x9c7a52, spec.x, 0.56, spec.z));
+  });
+
+  // 三面玻璃（正面留门洞），加一道腰线窗框
+  [
+    { w: 1.9, d: 0.05, x: 0, z: -0.98, fw: 1.9, fd: 0.07 },
+    { w: 0.05, d: 1.9, x: -0.98, z: 0, fw: 0.07, fd: 1.9 },
+    { w: 0.05, d: 1.9, x: 0.98, z: 0, fw: 0.07, fd: 1.9 },
+  ].forEach((spec) => {
+    const pane = new THREE.Mesh(new THREE.BoxGeometry(spec.w, 1.42, spec.d), glassMaterial);
+    pane.position.set(spec.x, 1.62, spec.z);
+    pane.renderOrder = 2;
+    group.add(pane);
+    group.add(m(new THREE.BoxGeometry(spec.fw, 0.06, spec.fd), 0x7d6142, spec.x, 1.62, spec.z));
+  });
+
+  // 正面的门（半开）
+  const door = m(new THREE.BoxGeometry(0.78, 1.96, 0.06), 0xa9855b, -0.42, 1.14, 1.0);
+  door.rotation.y = -0.42;
+  group.add(door);
+  group.add(m(new THREE.BoxGeometry(0.05, 0.05, 0.05), 0xc9a24a, -0.24, 1.18, 1.06));
+
+  // 亭子里的话筒与小桌
+  group.add(m(new THREE.BoxGeometry(0.72, 0.06, 0.44), 0x7a5334, 0.1, 0.92, -0.3));
+  [
+    [-0.24, -0.48],
+    [0.44, -0.48],
+    [-0.24, -0.12],
+    [0.44, -0.12],
+  ].forEach(([x, z]) => {
+    group.add(m(new THREE.BoxGeometry(0.05, 0.74, 0.05), 0x8a6c47, x, 0.55, z));
+  });
+  group.add(m(new THREE.CylinderGeometry(0.02, 0.02, 0.62, 5), 0x4a4b47, 0.1, 1.26, -0.3));
+  group.add(m(new THREE.CylinderGeometry(0.05, 0.05, 0.16, 8), 0x3a3a38, 0.1, 1.6, -0.3));
+  group.add(m(new THREE.SphereGeometry(0.07, 8, 6), 0x2f2f2d, 0.1, 1.7, -0.3));
+
+  // 顶：檐板 + 收顶 + 红灯
+  group.add(m(new THREE.BoxGeometry(2.5, 0.12, 2.5), tone.base, 0, 2.4, 0));
+  group.add(m(new THREE.BoxGeometry(2.16, 0.24, 2.16), 0x9c7a52, 0, 2.57, 0));
+  group.add(m(new THREE.BoxGeometry(0.56, 0.2, 0.1), 0xc0503a, 0, 2.8, 1.14));
+  group.add(m(new THREE.SphereGeometry(0.075, 8, 6), 0xf0b0a0, 0, 2.8, 1.2));
+
+  return group;
+}
+
+/** 喇叭测试架：三脚架、立杆、朝天的喇叭、垂下的线 */
+function speakerstand(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  for (let i = 0; i < 3; i += 1) {
+    const pivot = new THREE.Group();
+    pivot.rotation.y = (i / 3) * Math.PI * 2;
+    const leg = m(new THREE.BoxGeometry(0.06, 1.52, 0.06), 0x6b533a, 0, 0.72, 0.3);
+    leg.rotation.x = -0.2;
+    pivot.add(leg);
+    group.add(pivot);
+  }
+  group.add(m(new THREE.CylinderGeometry(0.07, 0.07, 1.6, 8), 0x8a857c, 0, 1.72, 0));
+
+  const horn = new THREE.Group();
+  horn.position.set(0, 2.46, 0);
+  horn.rotation.x = -0.66;
+  horn.rotation.y = 0.35;
+  horn.add(m(new THREE.CylinderGeometry(0.12, 0.44, 0.66, 12), 0x8a857c, 0, 0.12, 0));
+  horn.add(m(new THREE.CylinderGeometry(0.52, 0.44, 0.11, 12), 0xc9a24a, 0, 0.5, 0));
+  horn.add(m(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 8), 0x5d5a55, 0, -0.24, 0));
+  group.add(horn);
+
+  // 从杆上绕下来的一段线
+  const line = m(new THREE.BoxGeometry(0.035, 1.4, 0.035), 0x4a4038, 0.1, 1.0, 0.12);
+  line.rotation.z = 0.16;
+  group.add(line);
+
+  return group;
+}
+
+/* ------------------------------ 地图亭：驿站 ------------------------------ */
+
+/** 多向路牌：一根柱，四块指向不同方向的指示牌 */
+function signcluster(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  const h = 2.96;
+
+  group.add(m(new THREE.CylinderGeometry(0.14, 0.18, h, 8), 0x6b533a, 0, h / 2, 0));
+  group.add(m(new THREE.SphereGeometry(0.17, 10, 8), 0xc9a24a, 0, h + 0.05, 0));
+
+  // 角度留一块正对镜头（等距视角下最接近 π/4 的那块）
+  const boards: [number, number, AccentKey][] = [
+    [2.64, 0.74, "sun"],
+    [2.16, 1.95, "mint"],
+    [1.68, 2.98, "coral"],
+    [1.2, -0.9, "blue"],
+  ];
+
+  boards.forEach(([y, angle, key]) => {
+    const pivot = new THREE.Group();
+    pivot.position.y = y;
+    pivot.rotation.y = angle;
+
+    // 浅色牌面 + 深色「字」 + 一条底色，远看才是块路牌
+    const plank = m(new THREE.BoxGeometry(1.28, 0.38, 0.07), ACCENT[key].soft, 0.76, 0, 0);
+    pivot.add(plank);
+    pivot.add(m(new THREE.BoxGeometry(0.9, 0.1, 0.02), PAPER.ink, 0.72, 0.06, 0.042));
+    pivot.add(m(new THREE.BoxGeometry(0.66, 0.06, 0.02), ACCENT[key].ink, 0.78, -0.07, 0.042));
+    // 牌尾削成尖角
+    const tip = m(new THREE.ConeGeometry(0.26, 0.3, 4), ACCENT[key].soft, 1.44, 0, 0);
+    tip.rotation.z = -Math.PI / 2;
+    tip.rotation.y = Math.PI / 4;
+    pivot.add(tip);
+
+    group.add(pivot);
+  });
+
+  return group;
+}
+
+/** 行李堆：三只箱子叠着，一只提包靠在旁边 */
+function luggage(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  // 底箱
+  group.add(m(new THREE.BoxGeometry(0.88, 0.5, 0.56), 0x8c5b3a, 0, 0.25, 0));
+  group.add(m(new THREE.BoxGeometry(0.92, 0.06, 0.6), 0x6b4227, 0, 0.46, 0));
+  [-0.24, 0.24].forEach((x) => {
+    group.add(m(new THREE.BoxGeometry(0.06, 0.52, 0.58), 0xc9a24a, x, 0.25, 0));
+  });
+
+  // 上箱
+  const upper = m(new THREE.BoxGeometry(0.62, 0.36, 0.44), 0x7d6a4a, -0.1, 0.68, 0.02);
+  upper.rotation.y = 0.16;
+  group.add(upper);
+  group.add(m(new THREE.BoxGeometry(0.2, 0.04, 0.05), 0xb08b3e, -0.1, 0.87, 0.02));
+
+  // 提包
+  group.add(m(new THREE.BoxGeometry(0.36, 0.28, 0.16), 0xc0503a, 0.52, 0.15, 0.36));
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 6, 14, Math.PI), toon(0x8c3a22));
+  handle.position.set(0.52, 0.29, 0.36);
+  handle.rotation.y = Math.PI / 2;
+  group.add(handle);
+
+  return group;
+}
+
+/* ------------------------------ 画室：写生 ------------------------------ */
+
+/** 露天画架：两条前腿一条后腿、画板、画布、调色盘 */
+function easel(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+  const tone = ACCENT[def.accent ?? "coral"];
+
+  [-0.38, 0.38].forEach((x) => {
+    const leg = m(new THREE.BoxGeometry(0.07, 2.04, 0.07), 0x8a6c47, x, 1.02, 0.12);
+    leg.rotation.z = x > 0 ? 0.05 : -0.05;
+    group.add(leg);
+  });
+  const back = m(new THREE.BoxGeometry(0.07, 1.92, 0.07), 0x8a6c47, 0, 0.96, -0.44);
+  back.rotation.x = -0.24;
+  group.add(back);
+
+  // 搁架
+  group.add(m(new THREE.BoxGeometry(0.96, 0.07, 0.18), 0x7d6142, 0, 0.9, 0.16));
+
+  // 画布
+  const canvas = m(new THREE.BoxGeometry(0.86, 1.06, 0.05), 0xf6efdd, 0, 1.52, 0.15);
+  canvas.rotation.x = -0.07;
+  group.add(canvas);
+
+  // 画布上的几块颜色
+  const blobs: [number, number, number, number][] = [
+    [-0.18, -0.14, 0.2, tone.base],
+    [0.16, -0.24, 0.16, 0x4f9dc4],
+    [0.02, 0.22, 0.13, 0xe0a23a],
+    [-0.24, 0.3, 0.1, 0x3d9e7d],
+  ];
+  blobs.forEach(([x, y, r, c]) => {
+    group.add(m(new THREE.CircleGeometry(r, 10), c, x, 1.52 + y, 0.185));
+  });
+
+  // 搁板上的调色盘与画笔
+  group.add(m(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 12), 0xf2ead6, -0.28, 0.95, 0.2));
+  [-0.06, 0, 0.06].forEach((dx, i) => {
+    group.add(m(new THREE.SphereGeometry(0.03, 6, 5), [0xd9603c, 0x4666c4, 0xe0a23a][i], -0.28 + dx, 0.965, 0.2));
+  });
+  const brush = m(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 5), 0x9c7a52, 0.2, 0.98, 0.22);
+  brush.rotation.z = 0.3;
+  group.add(brush);
+
+  return group;
+}
+
+/** 石膏像：方基座、圆柱台、半身胸像 */
+function plaster(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+
+  group.add(m(new THREE.BoxGeometry(0.92, 0.52, 0.92), 0xb6aa8e, 0, 0.26, 0));
+  group.add(m(new THREE.BoxGeometry(0.74, 0.12, 0.74), 0xc9bda2, 0, 0.58, 0));
+  group.add(m(new THREE.CylinderGeometry(0.3, 0.36, 0.14, 12), 0xc9bda2, 0, 0.71, 0));
+
+  // 胸像：肩、脖子、头
+  group.add(m(new THREE.CylinderGeometry(0.33, 0.24, 0.44, 12), 0xeae2d2, 0, 1.0, 0));
+  group.add(m(new THREE.CylinderGeometry(0.1, 0.13, 0.14, 10), 0xe2d8c6, 0, 1.26, 0));
+  group.add(m(new THREE.SphereGeometry(0.2, 14, 12), 0xf4eee1, 0, 1.42, 0));
+  // 后脑与鼻梁的小起伏，避免只看成一颗球
+  group.add(m(new THREE.SphereGeometry(0.12, 10, 8), 0xf4eee1, 0, 1.46, -0.1));
+  group.add(m(new THREE.ConeGeometry(0.045, 0.12, 5), 0xf4eee1, 0, 1.4, 0.19));
+
+  return group;
+}
+
+/* ------------------------------ 任务板：待办 ------------------------------ */
+
+/** 任务墙：一面插满便签的大木板墙，顶上有一条雨檐 */
+function noticewall(def: AnnexDef): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(def.x, 0, def.z);
+  group.rotation.y = def.rot ?? 0;
+  const w = def.w ?? 3.4;
+  const h = 2.34;
+
+  [-w / 2 + 0.12, w / 2 - 0.12].forEach((x) => {
+    group.add(m(new THREE.BoxGeometry(0.14, h, 0.14), 0x6b533a, x, h / 2, 0));
+  });
+
+  group.add(m(new THREE.BoxGeometry(w, 1.72, 0.1), 0x8a6c47, 0, 1.32, 0));
+  group.add(m(new THREE.BoxGeometry(w - 0.18, 1.56, 0.05), 0xb08d63, 0, 1.32, 0.06));
+
+  // 只在顶部压一条横木，别把板面切成格子
+  group.add(m(new THREE.BoxGeometry(w - 0.2, 0.07, 0.03), 0x6b533a, 0, 2.06, 0.09));
+
+  // 便签：四排，颜色循环，位置用确定性抖动
+  const colors = [0xfbf6ea, 0xf5d99b, 0xb5e0cf, 0xf3c4b0, 0xbdcbf0];
+  for (let row = 0; row < 4; row += 1) {
+    for (let col = 0; col < 5; col += 1) {
+      const seed = row * 5 + col;
+      const x = -w / 2 + 0.36 + col * ((w - 0.72) / 4);
+      const y = 1.98 - row * 0.4;
+      const note = m(new THREE.BoxGeometry(0.46, 0.34, 0.016), colors[seed % colors.length], x, y, 0.1);
+      note.rotation.z = (jitter(seed) - 0.5) * 0.12;
+      group.add(note);
+      group.add(m(new THREE.SphereGeometry(0.026, 6, 4), 0xc0503a, x, y + 0.12, 0.114));
+    }
+  }
+
+  // 雨檐
+  const eave = m(new THREE.BoxGeometry(w + 0.34, 0.08, 0.42), 0x6b533a, 0, h - 0.02, 0.14);
+  eave.rotation.x = -0.14;
+  group.add(eave);
+
+  return group;
+}
+
 export function createAnnex(def: AnnexDef): THREE.Group {
   const group = buildAnnex(def);
   if (def.y) group.position.y += def.y;
@@ -1121,6 +1546,26 @@ function buildAnnex(def: AnnexDef): THREE.Group {
       return telegraphdesk(def);
     case "crates":
       return createCrates(def.x, def.z, def.rot ?? 0);
+    case "typewriterdesk":
+      return typewriterdesk(def);
+    case "paperrack":
+      return paperrack(def);
+    case "wastebin":
+      return wastebin(def);
+    case "booth":
+      return booth(def);
+    case "speakerstand":
+      return speakerstand(def);
+    case "signcluster":
+      return signcluster(def);
+    case "luggage":
+      return luggage(def);
+    case "easel":
+      return easel(def);
+    case "plaster":
+      return plaster(def);
+    case "noticewall":
+      return noticewall(def);
     default:
       return new THREE.Group();
   }
