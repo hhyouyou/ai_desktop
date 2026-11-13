@@ -4,6 +4,7 @@
  */
 
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
 let gradientMap: THREE.DataTexture | null = null;
 
@@ -20,22 +21,25 @@ export function getGradientMap(): THREE.DataTexture {
 }
 
 const materialCache = new Map<string, THREE.MeshToonMaterial>();
+const sharedTextures = new Set<THREE.Texture>();
 
-export function toon(color: number, side: THREE.Side = THREE.FrontSide): THREE.MeshToonMaterial {
-  const key = `${color}-${side}`;
+export function toon(color: number, side: THREE.Side = THREE.FrontSide, map?: THREE.Texture): THREE.MeshToonMaterial {
+  const key = `${color}-${side}-${map?.uuid ?? "plain"}`;
   const cached = materialCache.get(key);
   if (cached) return cached;
   const material = new THREE.MeshToonMaterial({
     color,
     gradientMap: getGradientMap(),
     side,
+    ...(map ? { map } : {}),
   });
+  if (map) sharedTextures.add(map);
   materialCache.set(key, material);
   return material;
 }
 
 export function flat(color: number, map?: THREE.Texture): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({ color, map, toneMapped: false });
+  return new THREE.MeshBasicMaterial({ color, ...(map ? { map } : {}), toneMapped: false });
 }
 
 export function glow(color: number, opacity = 0.55): THREE.MeshBasicMaterial {
@@ -51,8 +55,15 @@ export function glow(color: number, opacity = 0.55): THREE.MeshBasicMaterial {
 export function disposeSharedMaterials(): void {
   materialCache.forEach((material) => material.dispose());
   materialCache.clear();
+  sharedTextures.forEach((texture) => texture.dispose());
+  sharedTextures.clear();
   gradientMap?.dispose();
   gradientMap = null;
+}
+
+/** 小倒角让纸模边缘接住主光，近景不再是完全锐利的盒体。 */
+export function beveledBox(width: number, height: number, depth: number, radius = 0.06): RoundedBoxGeometry {
+  return new RoundedBoxGeometry(width, height, depth, 2, Math.min(radius, width / 3, height / 3, depth / 3));
 }
 
 export function outline(geometry: THREE.BufferGeometry, color: number, opacity = 0.5): THREE.LineSegments {

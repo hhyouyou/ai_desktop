@@ -7,8 +7,9 @@
  */
 
 import * as THREE from "three";
-import { ACCENT, PAPER, type BuildingDef } from "./data";
+import { ACCENT, BUILDING_ANNEXES, PAPER, type BuildingAnnexDef, type BuildingDef } from "./data";
 import {
+  beveledBox,
   flat,
   floatY,
   glow,
@@ -28,16 +29,126 @@ function toneOf(def: BuildingDef): Tone {
   return ACCENT[def.accent];
 }
 
+/* ------------------------------ 可复用建筑构件 ------------------------------ */
+
+function framedWindow(width: number, height: number): THREE.Group {
+  const group = new THREE.Group();
+  group.add(m(beveledBox(width + 0.18, height + 0.18, 0.13, 0.025), PAPER.roofSide));
+  group.add(m(beveledBox(width, height, 0.08, 0.018), PAPER.window, 0, 0, 0.085));
+  const vertical = new THREE.Mesh(new THREE.BoxGeometry(0.045, height, 0.025), toon(PAPER.wall));
+  vertical.position.z = 0.14;
+  group.add(vertical);
+  const horizontal = new THREE.Mesh(new THREE.BoxGeometry(width, 0.045, 0.025), toon(PAPER.wall));
+  horizontal.position.z = 0.14;
+  group.add(horizontal);
+  return group;
+}
+
+function annexRoof(spec: BuildingAnnexDef, color: number): THREE.Group {
+  const group = new THREE.Group();
+  const { w, d, h, roof } = spec;
+  if (roof === "gable") {
+    const rise = Math.max(0.65, Math.min(w, d) * 0.36);
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2 - 0.18, 0);
+    shape.lineTo(w / 2 + 0.18, 0);
+    shape.lineTo(0, rise);
+    shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: d + 0.36, bevelEnabled: false });
+    geometry.translate(0, 0, -(d + 0.36) / 2);
+    const mesh = m(geometry, color, 0, h, 0);
+    mesh.add(outline(geometry, PAPER.trim, 0.2));
+    group.add(mesh);
+    group.add(m(beveledBox(0.16, 0.16, d + 0.46, 0.025), PAPER.roofSide, 0, h + rise, 0));
+    return group;
+  }
+
+  const slab = m(beveledBox(w + 0.38, 0.18, d + 0.38, 0.035), color, 0, h + 0.16, 0);
+  if (roof === "shed") slab.rotation.z = -0.13;
+  group.add(slab);
+  if (roof === "flat") {
+    group.add(m(beveledBox(w + 0.18, 0.32, 0.12, 0.025), PAPER.roofSide, 0, h + 0.35, -d / 2));
+    group.add(m(beveledBox(0.12, 0.32, d + 0.18, 0.025), PAPER.roofSide, w / 2, h + 0.35, 0));
+  }
+  return group;
+}
+
+function createAnnexes(def: BuildingDef, tone: Tone): THREE.Group {
+  const group = new THREE.Group();
+  (BUILDING_ANNEXES[def.id] ?? []).forEach((spec) => {
+    const annex = new THREE.Group();
+    annex.position.set(spec.x, 0, spec.z);
+    const wall = spec.wallTone === "side" ? PAPER.wallSide : PAPER.wall;
+    const bodyGeometry = beveledBox(spec.w, spec.h, spec.d, 0.055);
+    const body = m(bodyGeometry, wall, 0, spec.h / 2, 0);
+    body.userData.buildingId = def.id;
+    body.add(outline(bodyGeometry, PAPER.trim, 0.18));
+    annex.add(body);
+    annex.add(m(beveledBox(spec.w + 0.14, 0.24, spec.d + 0.14, 0.035), PAPER.roofSide, 0, 0.12, 0));
+    annex.add(annexRoof(spec, spec.roofTone === "base" ? tone.base : tone.soft));
+
+    const windows = spec.windows ?? "both";
+    if (windows === "front" || windows === "both") {
+      const win = framedWindow(Math.min(0.9, spec.w * 0.42), Math.min(1.05, spec.h * 0.36));
+      win.position.set(0, spec.h * 0.58, spec.d / 2 + 0.045);
+      annex.add(win);
+    }
+    if (windows === "side" || windows === "both") {
+      const win = framedWindow(Math.min(0.9, spec.d * 0.38), Math.min(1.05, spec.h * 0.36));
+      win.rotation.y = Math.PI / 2;
+      win.position.set(spec.w / 2 + 0.045, spec.h * 0.58, 0);
+      annex.add(win);
+    }
+    group.add(annex);
+  });
+  return group;
+}
+
+function roofDeck(w: number, d: number, y: number, color: number): THREE.Group {
+  const group = new THREE.Group();
+  group.add(m(beveledBox(w, 0.16, d, 0.035), PAPER.roofSide, 0, y, 0));
+  [-1, 1].forEach((side) => {
+    group.add(m(beveledBox(w + 0.08, 0.42, 0.12, 0.025), color, 0, y + 0.25, side * d / 2));
+    group.add(m(beveledBox(0.12, 0.42, d + 0.08, 0.025), color, side * w / 2, y + 0.25, 0));
+  });
+  return group;
+}
+
+function stripedAwning(w: number, y: number, z: number, tone: Tone): THREE.Group {
+  const group = new THREE.Group();
+  const stripes = 7;
+  for (let i = 0; i < stripes; i += 1) {
+    const panel = m(beveledBox(w / stripes + 0.025, 0.09, 0.92, 0.02), i % 2 === 0 ? tone.base : PAPER.wall);
+    panel.position.set(-w / 2 + (i + 0.5) * (w / stripes), y, z);
+    panel.rotation.x = -0.14;
+    group.add(panel);
+  }
+  [-1, 1].forEach((side) => {
+    group.add(m(new THREE.CylinderGeometry(0.035, 0.045, y, 6), PAPER.trim, side * w * 0.46, y / 2, z + 0.32));
+  });
+  return group;
+}
+
 /* ------------------------------ 1 工坊：单坡厂房 + 转动的齿轮 + 屋顶扳手 ------------------------------ */
 
 function workshop(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
-  const roof = m(new THREE.BoxGeometry(w + 0.8, 0.26, d + 0.9), tone.soft);
+  const roof = m(beveledBox(w + 0.8, 0.26, d + 0.9, 0.045), tone.soft);
   roof.position.set(0, h + 0.32, 0);
   roof.rotation.z = 0.11;
   g.add(roof);
+
+  // 主厂房＋侧跨之外，再加两片北向天窗，形成生产建筑特有的屋顶节奏。
+  [-0.22, 0.22].forEach((ratio) => {
+    const skylight = m(beveledBox(w * 0.28, 0.1, d * 0.48, 0.025), PAPER.glass, w * ratio, h + 0.72, -d * 0.12);
+    skylight.rotation.x = -0.34;
+    skylight.rotation.z = 0.11;
+    g.add(skylight);
+    g.add(m(beveledBox(w * 0.3, 0.08, 0.12, 0.02), PAPER.trim, w * ratio, h + 0.58, d * 0.12));
+  });
+  g.add(m(beveledBox(w + 0.16, 0.48, d + 0.16, 0.04), PAPER.wallBack, 0, 0.24, 0));
 
   g.add(m(new THREE.BoxGeometry(0.34, 0.4, d + 1), PAPER.trim, w * 0.5, h + 0.02, 0));
   g.add(m(new THREE.BoxGeometry(0.24, 0.3, d + 1), PAPER.trim, -w * 0.5, h + 0.02, 0));
@@ -81,8 +192,17 @@ function telegraph(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
-  g.add(m(new THREE.BoxGeometry(w + 0.6, 0.24, d + 0.6), tone.soft, 0, h + 0.12, 0));
-  g.add(m(new THREE.BoxGeometry(w + 0.82, 0.2, d + 0.82), tone.base, 0, h + 0.02, 0));
+  g.add(m(beveledBox(w + 0.6, 0.24, d + 0.6, 0.04), tone.soft, 0, h + 0.12, 0));
+  g.add(m(beveledBox(w + 0.82, 0.2, d + 0.82, 0.035), tone.base, 0, h + 0.02, 0));
+  g.add(roofDeck(w + 0.18, d + 0.18, h + 0.28, tone.ink));
+
+  // 左侧信号室与右侧天线分开，屋顶形成“机房＋平台＋天线”三段轮廓。
+  const signalRoom = m(beveledBox(w * 0.36, 1.15, d * 0.42, 0.055), PAPER.wallSide, -w * 0.2, h + 0.92, -d * 0.12);
+  g.add(signalRoom);
+  g.add(m(beveledBox(w * 0.4, 0.16, d * 0.46, 0.035), tone.soft, -w * 0.2, h + 1.56, -d * 0.12));
+  const signalWindow = framedWindow(0.9, 0.58);
+  signalWindow.position.set(-w * 0.2, h + 0.95, d * 0.09 + 0.05);
+  g.add(signalWindow);
 
   // 天线
   g.add(m(new THREE.CylinderGeometry(0.07, 0.09, 1.9, 8), PAPER.trim, w * 0.22, h + 1.2, 0));
@@ -132,7 +252,15 @@ function radio(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
-  g.add(m(new THREE.BoxGeometry(w + 0.6, 0.22, d + 0.6), tone.base, 0, h + 0.11, 0));
+  g.add(m(beveledBox(w + 0.6, 0.22, d + 0.6, 0.04), tone.base, 0, h + 0.11, 0));
+  g.add(roofDeck(w + 0.28, d + 0.28, h * 0.52, tone.base));
+
+  const listeningRoom = m(beveledBox(w * 0.46, 1.35, d * 0.52, 0.055), PAPER.wallSide, -w * 0.2, h + 0.82, -d * 0.12);
+  g.add(listeningRoom);
+  g.add(m(beveledBox(w * 0.5, 0.16, d * 0.56, 0.035), tone.soft, -w * 0.2, h + 1.56, -d * 0.12));
+  const listeningWindow = framedWindow(0.92, 0.72);
+  listeningWindow.position.set(-w * 0.2, h + 0.84, d * 0.14 + 0.05);
+  g.add(listeningWindow);
 
   // 喇叭：口朝外上方
   const horn = new THREE.Group();
@@ -200,6 +328,17 @@ function bookshop(def: BuildingDef, tone: Tone): THREE.Group {
     g.add(m(new THREE.BoxGeometry(w * 0.7, 0.08, 0.08), PAPER.trunk, 0, h * 0.3 + i * 0.55, d / 2 + 0.04));
   }
 
+  // 街角凸窗与后厢组成书店群，正立面也不再只是重复窗列。
+  const bayX = w * 0.28;
+  g.add(m(beveledBox(1.7, 1.82, 0.62, 0.05), PAPER.roofSide, bayX, 1.18, d / 2 + 0.34));
+  const bayWindow = framedWindow(1.42, 1.5);
+  bayWindow.position.set(bayX, 1.2, d / 2 + 0.69);
+  g.add(bayWindow);
+  g.add(m(beveledBox(1.92, 0.14, 0.84, 0.035), tone.soft, bayX, 2.16, d / 2 + 0.36));
+  for (let i = 0; i < 3; i += 1) {
+    g.add(m(beveledBox(0.18, 0.34 + i * 0.05, 0.16, 0.02), [tone.base, 0xe0a23a, 0x4666c4][i], bayX - 0.42 + i * 0.42, 0.62, d / 2 + 0.72));
+  }
+
   return g;
 }
 
@@ -208,27 +347,52 @@ function bookshop(def: BuildingDef, tone: Tone): THREE.Group {
 function observatory(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
-  const radius = Math.min(w, d) * 0.48;
+  const radius = Math.min(w, d) * 0.44;
+  const domeBase = h + 0.82;
 
-  g.add(m(new THREE.CylinderGeometry(radius + 0.24, radius + 0.32, 0.46, 18), PAPER.roofSide, 0, h + 0.23, 0));
+  // 方形基座之上增加圆形鼓座，让穹顶不再直接压在方盒上。
+  g.add(m(new THREE.CylinderGeometry(radius + 0.3, radius + 0.38, 0.2, 32), PAPER.roofSide, 0, h + 0.1, 0));
+  g.add(m(new THREE.CylinderGeometry(radius + 0.14, radius + 0.14, 0.68, 32), PAPER.wallSide, 0, h + 0.47, 0));
+  g.add(m(new THREE.CylinderGeometry(radius + 0.25, radius + 0.25, 0.14, 32), PAPER.roofSide, 0, h + 0.79, 0));
 
-  const domeGeo = new THREE.SphereGeometry(radius, 22, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+  [-0.72, 0.72].forEach((x) => {
+    g.add(m(beveledBox(0.52, 0.38, 0.09, 0.025), PAPER.roofSide, x, h + 0.47, radius + 0.15));
+    g.add(m(beveledBox(0.38, 0.25, 0.06, 0.018), PAPER.window, x, h + 0.47, radius + 0.21));
+  });
+
+  const domeGeo = new THREE.SphereGeometry(radius, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  domeGeo.scale(1, 0.86, 1);
   const dome = shadowed(new THREE.Mesh(domeGeo, toon(tone.soft)));
-  dome.position.y = h + 0.46;
-  dome.add(outline(domeGeo, PAPER.trim, 0.35));
+  dome.position.y = domeBase;
+  dome.add(outline(domeGeo, PAPER.trim, 0.16));
   g.add(dome);
 
-  const hatch = m(new THREE.BoxGeometry(radius * 0.86, 0.14, radius * 1.7), PAPER.trim);
-  hatch.position.set(-radius * 0.52, h + 0.46 + radius * 0.7, 0);
-  hatch.rotation.z = 0.55;
-  g.add(hatch);
+  // 三道经线肋替代整球描边，近景能看出穹顶的分瓣结构。
+  [0, Math.PI / 3, (Math.PI * 2) / 3].forEach((angle) => {
+    const rib = m(new THREE.TorusGeometry(radius * 0.995, 0.035, 5, 32, Math.PI), PAPER.roofSide);
+    rib.position.y = domeBase;
+    rib.rotation.y = angle;
+    rib.scale.y = 0.86;
+    g.add(rib);
+  });
+
+  // 缩窄观测缝与开启的盖板，避免一整块厚重板件压住穹顶轮廓。
+  const slit = m(beveledBox(radius * 0.3, 0.1, radius * 1.34, 0.025), tone.ink);
+  slit.position.set(-radius * 0.34, domeBase + radius * 0.68, 0);
+  slit.rotation.z = 0.55;
+  g.add(slit);
+  const shutter = m(beveledBox(radius * 0.34, 0.1, radius * 1.38, 0.025), tone.soft);
+  shutter.position.set(-radius * 0.72, domeBase + radius * 0.84, 0);
+  shutter.rotation.z = 0.9;
+  g.add(shutter);
 
   const scope = new THREE.Group();
-  scope.position.set(0, h + 0.46 + radius * 0.58, 0);
-  scope.rotation.z = -0.6;
-  scope.add(m(new THREE.CylinderGeometry(0.34, 0.5, 2.8, 12), tone.base));
-  scope.add(m(new THREE.CylinderGeometry(0.56, 0.56, 0.24, 12), PAPER.trim, 0, 1.48, 0));
-  scope.add(m(new THREE.CylinderGeometry(0.15, 0.15, 0.34, 10), PAPER.trim, 0, -1.24, 0));
+  scope.position.set(-radius * 0.12, domeBase + radius * 0.82, 0);
+  scope.rotation.z = 0.68;
+  scope.add(m(new THREE.CylinderGeometry(0.28, 0.43, 2.5, 16), tone.base));
+  scope.add(m(new THREE.CylinderGeometry(0.49, 0.49, 0.2, 16), PAPER.roofSide, 0, 1.32, 0));
+  scope.add(m(new THREE.CylinderGeometry(0.34, 0.34, 0.16, 16), tone.ink, 0, 1.47, 0));
+  scope.add(m(new THREE.CylinderGeometry(0.12, 0.12, 0.34, 10), PAPER.trim, 0, -1.22, 0));
   g.add(scope);
 
   [
@@ -250,6 +414,19 @@ function observatory(def: BuildingDef, tone: Tone): THREE.Group {
 function kiosk(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
+
+  // 四柱开敞驿站：屋顶、柜台与后部半墙分离，不再用实心盒冒充亭子。
+  g.add(m(beveledBox(w + 0.24, 0.16, d + 0.24, 0.04), PAPER.plaza, 0, 0.08, 0));
+  [-1, 1].forEach((sx) => {
+    [-1, 1].forEach((sz) => {
+      g.add(m(new THREE.CylinderGeometry(0.1, 0.13, h, 8), PAPER.trunk, sx * (w / 2 - 0.22), h / 2, sz * (d / 2 - 0.22)));
+      g.add(m(beveledBox(0.3, 0.16, 0.3, 0.025), PAPER.roofSide, sx * (w / 2 - 0.22), 0.08, sz * (d / 2 - 0.22)));
+    });
+  });
+  g.add(m(beveledBox(w * 0.82, 0.72, 0.16, 0.035), PAPER.wallSide, 0, 0.36, -d / 2 + 0.18));
+  [-1, 1].forEach((side) => {
+    g.add(m(beveledBox(0.12, 0.12, d * 0.64, 0.025), PAPER.trunk, side * (w / 2 - 0.22), 0.86, -d * 0.08));
+  });
 
   // 悬挑顶棚
   g.add(m(new THREE.BoxGeometry(w + 1.1, 0.18, d + 1.1), tone.soft, 0, h + 0.09, 0));
@@ -293,7 +470,15 @@ function gazette(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
-  g.add(m(new THREE.BoxGeometry(w + 0.7, 0.24, d + 0.7), tone.base, 0, h + 0.12, 0));
+  g.add(m(beveledBox(w + 0.7, 0.24, d + 0.7, 0.04), tone.base, 0, h + 0.12, 0));
+
+  // 后部印刷车间采用锯齿形高侧窗，与前部滚筒形成两种工业屋顶。
+  [-0.26, 0, 0.26].forEach((ratio) => {
+    const monitor = m(beveledBox(w * 0.2, 0.12, d * 0.24, 0.025), PAPER.glass, w * ratio, h + 0.5, -d * 0.34);
+    monitor.rotation.x = -0.48;
+    g.add(monitor);
+    g.add(m(beveledBox(w * 0.21, 0.1, 0.12, 0.02), PAPER.trim, w * ratio, h + 0.26, -d * 0.22));
+  });
 
   // 两个印刷滚筒
   [0, 1].forEach((index) => {
@@ -354,8 +539,13 @@ function townhall(def: BuildingDef, tone: Tone): THREE.Group {
     g.add(m(new THREE.CylinderGeometry(0.17, 0.2, h * 0.82, 10), PAPER.wall, w * ratio, h * 0.41, d / 2 + 0.75));
   });
 
-  // 檐口
-  g.add(m(new THREE.BoxGeometry(w + 0.9, 0.2, d + 0.9), PAPER.roofSide, 0, h + 0.1, 0));
+  // 檐口与低矮栏杆保持公共建筑的横向秩序，中央山花和圆顶作为最高点。
+  g.add(m(beveledBox(w + 0.9, 0.2, d + 0.9, 0.04), PAPER.roofSide, 0, h + 0.1, 0));
+  g.add(roofDeck(w + 0.42, d + 0.42, h + 0.22, PAPER.wallSide));
+  [-1, 1].forEach((side) => {
+    g.add(m(new THREE.CylinderGeometry(0.16, 0.22, 0.52, 8), PAPER.roofSide, side * w * 0.39, h + 0.68, -d * 0.3));
+    g.add(m(new THREE.SphereGeometry(0.18, 10, 8), tone.soft, side * w * 0.39, h + 1.02, -d * 0.3));
+  });
 
   // 三角山花
   const pedimentShape = new THREE.Shape();
@@ -392,11 +582,20 @@ function atelier(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
-  // 北向斜天窗
-  const skylight = m(new THREE.BoxGeometry(w * 0.86, 0.14, d * 0.6), 0xcfe3ea);
-  skylight.position.set(0, h + 0.85, -d * 0.2);
+  // 左侧北向斜天窗＋右侧小高窗塔，画室屋顶形成一大一小两个采光体。
+  const skylight = m(beveledBox(w * 0.5, 0.14, d * 0.6, 0.025), 0xcfe3ea);
+  skylight.position.set(-w * 0.2, h + 0.85, -d * 0.2);
   skylight.rotation.x = 0.42;
   g.add(skylight);
+
+  const studioTower = m(beveledBox(w * 0.26, 1.25, d * 0.42, 0.05), PAPER.wallSide, w * 0.31, h + 0.63, -d * 0.3);
+  g.add(studioTower);
+  const studioWindow = framedWindow(1.12, 0.78);
+  studioWindow.position.set(w * 0.31, h + 0.68, -d * 0.09 + 0.05);
+  g.add(studioWindow);
+  const studioCap = m(beveledBox(w * 0.3, 0.14, d * 0.46, 0.03), tone.soft, w * 0.31, h + 1.34, -d * 0.3);
+  studioCap.rotation.x = -0.16;
+  g.add(studioCap);
 
   // 后侧平顶
   g.add(m(new THREE.BoxGeometry(w + 0.5, 0.2, d * 0.5), tone.soft, 0, h + 0.1, d * 0.26));
@@ -461,8 +660,16 @@ function boardHouse(def: BuildingDef, tone: Tone): THREE.Group {
     g.add(m(new THREE.BoxGeometry(w + 0.8, 0.05, 0.12), PAPER.trunk, 0, h + 0.4, -d * 0.5 + i * (d * 0.28)));
   }
 
-  // 屋檐下的木梁
+  // 屋檐下的木梁与木骨架，让任务板成为林间小屋而非浅色盒体。
   g.add(m(new THREE.BoxGeometry(w + 0.9, 0.14, 0.16), PAPER.trunk, 0, h - 0.02, d / 2 + 0.3));
+  g.add(m(beveledBox(w + 0.12, 0.28, d + 0.12, 0.035), PAPER.trunk, 0, 0.14, 0));
+  [-1, 1].forEach((side) => {
+    g.add(m(beveledBox(0.18, h, 0.18, 0.025), PAPER.trunk, side * (w / 2 - 0.12), h / 2, d / 2 + 0.06));
+    const brace = m(beveledBox(0.12, 1.15, 0.12, 0.02), PAPER.trunk, side * w * 0.34, 0.94, d / 2 + 0.1);
+    brace.rotation.z = side * -0.58;
+    g.add(brace);
+  });
+  g.add(m(beveledBox(w, 0.16, 0.16, 0.025), PAPER.trunk, 0, h - 0.28, d / 2 + 0.08));
 
   // 飘起的便签
   [
@@ -535,6 +742,11 @@ function cafe(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
+  g.add(stripedAwning(w * 0.82, 2.48, d / 2 + 0.62, tone));
+  // 侧后方烘焙厨房带独立烟囱，与主楼屋顶咖啡杯组成前后两个识别点。
+  g.add(m(beveledBox(0.38, 1.15, 0.38, 0.035), PAPER.wallBack, 3.55, 3.5, -0.72));
+  g.add(m(beveledBox(0.52, 0.14, 0.52, 0.025), PAPER.roofSide, 3.55, 4.12, -0.72));
+
   const cup = new THREE.Group();
   cup.position.set(0, h + 0.7, 0);
 
@@ -582,6 +794,9 @@ function makeDial(radius: number): THREE.Group {
   rim.position.z = 0.056;
   dial.add(rim);
 
+  const bezel = m(new THREE.TorusGeometry(radius * 0.97, 0.055, 6, 32), PAPER.roofSide, 0, 0, 0.075);
+  dial.add(bezel);
+
   for (let i = 0; i < 12; i += 1) {
     const angle = (i / 12) * Math.PI * 2;
     const tick = m(
@@ -608,7 +823,9 @@ function makeDial(radius: number): THREE.Group {
   dial.add(makeHand(radius * 0.48, 0.11, ((hours + minutes / 60) / 12) * Math.PI * 2, PAPER.ink));
   dial.add(makeHand(radius * 0.76, 0.07, (minutes / 60) * Math.PI * 2, 0x8c3a22));
 
-  dial.add(m(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 8), PAPER.trim, 0, 0, 0.1));
+  const pin = m(new THREE.CylinderGeometry(0.09, 0.09, 0.08, 10), PAPER.trim, 0, 0, 0.11);
+  pin.rotation.x = Math.PI / 2;
+  dial.add(pin);
   return dial;
 }
 
@@ -618,22 +835,31 @@ function clocktower(def: BuildingDef, tone: Tone): THREE.Group {
   const g = new THREE.Group();
   const { w, d, h } = def;
 
-  // 顶部挑檐
-  g.add(m(new THREE.BoxGeometry(w + 0.9, 0.2, d + 0.9), PAPER.roofSide, 0, h + 0.1, 0));
+  // 塔冠按“挑檐—钟室—屋脊—尖顶”分层，避免一根长盒直接接圆锥。
+  g.add(m(beveledBox(w + 0.96, 0.2, d + 0.96, 0.045), PAPER.roofSide, 0, h + 0.1, 0));
+  g.add(m(beveledBox(w + 0.56, 0.14, d + 0.56, 0.035), PAPER.wallBack, 0, h + 0.3, 0));
 
-  const cap = m(new THREE.BoxGeometry(w * 0.82, 1.1, d * 0.82), PAPER.wallSide, 0, h + 0.75, 0);
+  const cap = m(beveledBox(w * 0.82, 1.08, d * 0.82, 0.055), PAPER.wallSide, 0, h + 0.86, 0);
   g.add(cap);
 
-  const spire = m(new THREE.ConeGeometry(w * 0.58, 2.6, 4), tone.base, 0, h + 2.6, 0);
+  [-0.62, 0, 0.62].forEach((offset) => {
+    g.add(m(beveledBox(0.3, 0.62, 0.07, 0.02), tone.ink, offset, h + 0.86, d * 0.41 + 0.045));
+    g.add(m(beveledBox(0.07, 0.62, 0.3, 0.02), tone.ink, w * 0.41 + 0.045, h + 0.86, offset));
+  });
+
+  g.add(m(beveledBox(w * 0.98, 0.18, d * 0.98, 0.04), PAPER.roofSide, 0, h + 1.46, 0));
+  const spire = m(new THREE.ConeGeometry(w * 0.64, 2.65, 4), tone.base, 0, h + 2.86, 0);
   spire.rotation.y = Math.PI / 4;
+  spire.add(outline(spire.geometry, PAPER.trim, 0.22));
   g.add(spire);
 
-  // 风向标
-  g.add(m(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 6), PAPER.trim, 0, h + 4.2, 0));
+  // 屋脊宝珠与风向标形成清晰但不过高的末端轮廓。
+  g.add(m(new THREE.SphereGeometry(0.11, 10, 8), PAPER.roofSide, 0, h + 4.22, 0));
+  g.add(m(new THREE.CylinderGeometry(0.035, 0.045, 0.72, 6), PAPER.trim, 0, h + 4.5, 0));
   const vane = new THREE.Group();
-  vane.position.set(0, h + 4.55, 0);
-  vane.add(m(new THREE.BoxGeometry(0.06, 0.06, 1), PAPER.trim));
-  vane.add(m(new THREE.BoxGeometry(0.34, 0.06, 0.06), PAPER.trim, 0, 0, 0.44));
+  vane.position.set(0, h + 4.82, 0);
+  vane.add(m(beveledBox(0.05, 0.05, 1, 0.015), PAPER.trim));
+  vane.add(m(beveledBox(0.34, 0.06, 0.06, 0.015), PAPER.trim, 0, 0, 0.44));
   spinY(vane, 0.5);
   g.add(vane);
 
@@ -683,10 +909,10 @@ const BUILDERS: Record<string, (def: BuildingDef, tone: Tone) => THREE.Group> = 
 };
 
 export function createSignature(def: BuildingDef): THREE.Group {
-  const builder = BUILDERS[def.id];
+  const group = new THREE.Group();
   const tone = toneOf(def);
-  if (!builder) {
-    return new THREE.Group();
-  }
-  return builder(def, tone);
+  group.add(createAnnexes(def, tone));
+  const builder = BUILDERS[def.id];
+  if (builder) group.add(builder(def, tone));
+  return group;
 }

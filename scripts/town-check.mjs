@@ -147,6 +147,19 @@ async function main() {
   const shot3 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const file3 = path.join(OUT_DIR, "town-03-focus.png");
   fs.writeFileSync(file3, Buffer.from(shot3.data, "base64"));
+
+  await evaluate(cdp, `window.__town && window.__town.focusBuilding('observatory')`);
+  await sleep(1200);
+  const shot4 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
+  const file4 = path.join(OUT_DIR, "town-04-observatory.png");
+  fs.writeFileSync(file4, Buffer.from(shot4.data, "base64"));
+
+  await evaluate(cdp, `window.__town && window.__town.focusBuilding('clocktower')`);
+  await sleep(1200);
+  const shot5 = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
+  const file5 = path.join(OUT_DIR, "town-05-clocktower.png");
+  fs.writeFileSync(file5, Buffer.from(shot5.data, "base64"));
+
   await evaluate(cdp, `window.__town && window.__town.resetView()`);
   await sleep(600);
 
@@ -186,7 +199,7 @@ async function main() {
     .filter(
       (e) =>
         e.method === "Runtime.exceptionThrown" ||
-        (e.method === "Runtime.consoleAPICalled" && e.params?.type === "error") ||
+        (e.method === "Runtime.consoleAPICalled" && ["error", "warning"].includes(e.params?.type)) ||
         (e.method === "Log.entryAdded" && e.params?.entry?.level === "error"),
     )
     .map((e) => {
@@ -194,7 +207,7 @@ async function main() {
         return `exception: ${e.params.exceptionDetails?.exception?.description ?? e.params.exceptionDetails?.text}`;
       }
       if (e.method === "Log.entryAdded") return `log: ${e.params.entry.text}`;
-      return `console.error: ${(e.params.args ?? []).map((a) => a.value ?? a.description).join(" ")}`;
+      return `console.${e.params.type}: ${(e.params.args ?? []).map((a) => a.value ?? a.description).join(" ")}`;
     })
     .slice(0, 8);
 
@@ -204,12 +217,18 @@ async function main() {
   console.log(JSON.stringify(arrived, null, 2));
   console.log("=== 人物状态 ===");
   console.log(JSON.stringify(state, null, 2));
-  console.log("=== 控制台错误 ===");
+  console.log("=== 控制台错误 / 警告 ===");
   console.log(errors.length ? errors.join("\n") : "none");
   console.log("=== 截图 ===");
   console.log(file1);
   console.log(file2);
   console.log(file3);
+  console.log(file4);
+  console.log(file5);
+
+  if (!report?.canvas || !report?.webgl || report?.listFallback || !arrived.card || errors.length > 0) {
+    process.exitCode = 1;
+  }
 
   cdp.close();
 }

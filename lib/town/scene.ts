@@ -10,6 +10,7 @@ import {
   BICYCLES,
   BINS,
   BUILDINGS,
+  BUILDING_ANNEXES,
   BUSHES,
   CLOTHESLINES,
   CRATES,
@@ -69,6 +70,7 @@ import {
   createTrashBin,
 } from "./props";
 import { createWalkGrid, findPath, isWalkable, nearestWalkable, type Point, type WalkGrid } from "./path";
+import { createPaperTexture } from "./textures";
 
 export type TownCallbacks = {
   onHover: (id: string | null) => void;
@@ -82,7 +84,9 @@ export type TownScene = {
   goToBuilding: (id: string) => void;
   zoomBy: (factor: number) => void;
   /** 把镜头平移到某处并缩放（等距角度不变），用于聚焦某个地点 */
-  focusOn: (x: number, z: number, zoom?: number) => void;
+  focusOn: (x: number, z: number, zoom?: number, targetY?: number) => void;
+  /** 按完整建筑包围盒聚焦，自动为穹顶和塔冠留出空间 */
+  focusBuilding: (id: string, zoom?: number) => void;
   resetView: () => void;
   getState: () => { x: number; z: number; moving: boolean; arrived: boolean; target: string | null };
 };
@@ -132,6 +136,8 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.02;
   renderer.domElement.style.display = "block";
   renderer.domElement.style.touchAction = "none";
   container.appendChild(renderer.domElement);
@@ -160,10 +166,10 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
 
   fitCamera();
 
-  const hemisphere = new THREE.HemisphereLight(0xfff8ea, 0xc9b49a, 1.5);
+  const hemisphere = new THREE.HemisphereLight(0xfff8ea, 0xc9b49a, 0.92);
   scene.add(hemisphere);
 
-  const sun = new THREE.DirectionalLight(0xfff2d8, 2.1);
+  const sun = new THREE.DirectionalLight(0xfff2d8, 2.25);
   sun.position.set(60, 88, 40);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -177,11 +183,12 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   sun.shadow.normalBias = 0.045;
   scene.add(sun);
 
-  const fill = new THREE.DirectionalLight(0xdfe9ff, 0.55);
+  const fill = new THREE.DirectionalLight(0xdfe9ff, 0.3);
   fill.position.set(-18, 16, -14);
   scene.add(fill);
 
-  scene.add(createGround(TOWN_SIZE));
+  const paperTexture = createPaperTexture();
+  scene.add(createGround(TOWN_SIZE, paperTexture));
 
   STREETS.forEach((street) => {
     scene.add(createStreet(street));
@@ -228,7 +235,7 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
   const buildingByIdMap = new Map<string, BuildingDef>(BUILDINGS.map((b) => [b.id, b]));
 
   BUILDINGS.forEach((def) => {
-    const handle = createBuilding(def);
+    const handle = createBuilding(def, paperTexture);
     handles.set(def.id, handle);
     hitTargets.push(...handle.hitTargets);
     scene.add(handle.group);
@@ -335,6 +342,17 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
         ? { x: b.x, z: b.z, hw: b.d / 2 + 0.3, hd: b.w / 2 + 0.3 }
         : { x: b.x, z: b.z, hw: b.w / 2 + 0.3, hd: b.d / 2 + 0.3 },
     ),
+    ...BUILDINGS.flatMap((b) => {
+      const angle = b.facing === "east" ? Math.PI / 2 : 0;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return (BUILDING_ANNEXES[b.id] ?? []).map((annex) => ({
+        x: b.x + cos * annex.x + sin * annex.z,
+        z: b.z - sin * annex.x + cos * annex.z,
+        hw: (Math.abs(cos) * annex.w + Math.abs(sin) * annex.d) / 2 + 0.15,
+        hd: (Math.abs(sin) * annex.w + Math.abs(cos) * annex.d) / 2 + 0.15,
+      }));
+    }),
     ...DECOR.map((d) => ({ x: d.x, z: d.z, hw: d.w / 2 + 0.25, hd: d.d / 2 + 0.25 })),
   ]);
 
@@ -701,10 +719,14 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
               if (m instanceof THREE.MeshBasicMaterial) {
                 m.map?.dispose();
                 m.dispose();
+              } else if (m instanceof THREE.LineBasicMaterial) {
+                m.dispose();
               }
             });
           } else if (material instanceof THREE.MeshBasicMaterial) {
             material.map?.dispose();
+            material.dispose();
+          } else if (material instanceof THREE.LineBasicMaterial) {
             material.dispose();
           }
         }
@@ -729,9 +751,31 @@ export function createTownScene(container: HTMLElement, callbacks: TownCallbacks
       camera.lookAt(0, -0.4, 0);
       camera.updateProjectionMatrix();
     },
-    focusOn(x: number, z: number, zoom = 1.4) {
-      camera.position.set(x + 65, 65, z + 65);
-      camera.lookAt(x, -0.4, z);
+    focusBuilding(id: string, zoom?: number) {
+      const handle = handles.get(id);
+      if (!handle) return;
+      handle.group.updateWorldMatrix(true, true);
+      const bounds = new THREE.Box3().setFromObject(handle.group);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const size = bounds.getSize(new THREE.Vector3());
+      const halfHeight = (camera.top - camera.bottom) / 2;
+      const aspect = (camera.right - camera.left) / Math.max(camera.top - camera.bottom, 1);
+      const projectedHeight = size.y + (size.x + size.z) * 0.32;
+      const projectedWidth = (size.x + size.z) * Math.SQRT1_2;
+      const fittedZoom = Math.min(
+        (halfHeight * 2) / Math.max(projectedHeight * 1.65, 1),
+        (halfHeight * 2 * aspect) / Math.max(projectedWidth * 1.65, 1),
+      );
+      const nextZoom = zoom ?? Math.min(4.2, Math.max(1.1, fittedZoom));
+      camera.position.set(center.x + 65, center.y + 65, center.z + 65);
+      camera.lookAt(center);
+      view.zoom = nextZoom;
+      camera.zoom = nextZoom;
+      camera.updateProjectionMatrix();
+    },
+    focusOn(x: number, z: number, zoom = 1.4, targetY = -0.4) {
+      camera.position.set(x + 65, targetY + 65, z + 65);
+      camera.lookAt(x, targetY, z);
       view.zoom = zoom;
       camera.zoom = zoom;
       camera.updateProjectionMatrix();

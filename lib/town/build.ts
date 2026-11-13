@@ -18,9 +18,9 @@ import {
   type StreetDef,
   type StreetKind,
 } from "./data";
-import { flat, getGradientMap, outline, shadowed, toon } from "./materials";
+import { beveledBox, flat, getGradientMap, m, outline, shadowed, toon } from "./materials";
 import { createSignature } from "./signature";
-import { createBoardTexture, createClockTexture, createSignTexture } from "./textures";
+import { createSignTexture } from "./textures";
 
 /* 材质工具统一定义在 materials.ts */
 
@@ -114,7 +114,46 @@ function createRoof(def: BuildingDef, accent: { base: number; soft: number; ink:
   return { group, rise: rise + 0.9 };
 }
 
-export function createBuilding(def: BuildingDef): BuildingHandle {
+function isVisualPrototype(def: BuildingDef): boolean {
+  return def.id === "observatory" || def.id === "clocktower";
+}
+
+/** 地标样板共用的建筑语言：基座、腰线、角柱，先竖向分层再加功能构件。 */
+function createPrototypeStructure(def: BuildingDef): THREE.Group {
+  const group = new THREE.Group();
+  const { w, d, h } = def;
+
+  group.add(m(beveledBox(w + 0.28, 0.3, d + 0.28, 0.055), PAPER.roofSide, 0, 0.15, 0));
+  group.add(m(beveledBox(w + 0.14, 0.12, d + 0.14, 0.035), PAPER.wallBack, 0, 0.39, 0));
+
+  const belts = def.id === "clocktower" ? [h * 0.32, h * 0.55, h - 0.16] : [h - 0.16];
+  belts.forEach((y, index) => {
+    const projection = index === belts.length - 1 ? 0.34 : 0.2;
+    group.add(m(beveledBox(w + projection, 0.16, d + projection, 0.035), PAPER.roofSide, 0, y, 0));
+  });
+
+  const pilasterHeight = h - 0.82;
+  [-1, 1].forEach((side) => {
+    group.add(m(
+      beveledBox(0.2, pilasterHeight, 0.18, 0.035),
+      PAPER.wallSide,
+      side * (w / 2 - 0.13),
+      0.41 + pilasterHeight / 2,
+      d / 2 + 0.055,
+    ));
+    group.add(m(
+      beveledBox(0.18, pilasterHeight, 0.2, 0.035),
+      PAPER.wallSide,
+      w / 2 + 0.055,
+      0.41 + pilasterHeight / 2,
+      side * (d / 2 - 0.13),
+    ));
+  });
+
+  return group;
+}
+
+export function createBuilding(def: BuildingDef, paperTexture?: THREE.Texture): BuildingHandle {
   const group = new THREE.Group();
   group.position.set(def.x, 0, def.z);
   // 门朝主街（+X）或朝镜头（+Z），加一点点确定性倾斜，避免整排建筑过于呆板
@@ -125,29 +164,41 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
   const accent = ACCENT[def.accent];
   const { w, d, h } = def;
   const hitTargets: THREE.Object3D[] = [];
+  const prototype = isVisualPrototype(def);
+  const openPavilion = def.id === "kiosk";
+  const wallMap = paperTexture;
 
-  const bodyGeometry = new THREE.BoxGeometry(w, h, d);
+  const bodyGeometry = openPavilion
+    ? beveledBox(w * 0.78, 1.05, 0.72, 0.055)
+    : beveledBox(w, h, d, prototype ? 0.09 : 0.055);
   const body = shadowed(
     new THREE.Mesh(bodyGeometry, [
-      toon(PAPER.wallSide),
-      toon(PAPER.wallBack),
-      toon(PAPER.wall),
-      toon(PAPER.wallBack),
-      toon(PAPER.wall),
-      toon(PAPER.wallBack),
+      toon(PAPER.wallSide, THREE.FrontSide, wallMap),
+      toon(PAPER.wallBack, THREE.FrontSide, wallMap),
+      toon(PAPER.wall, THREE.FrontSide, wallMap),
+      toon(PAPER.wallBack, THREE.FrontSide, wallMap),
+      toon(PAPER.wall, THREE.FrontSide, wallMap),
+      toon(PAPER.wallBack, THREE.FrontSide, wallMap),
     ]),
   );
-  body.position.y = h / 2;
+  body.position.y = openPavilion ? 0.525 : h / 2;
+  if (openPavilion) body.position.z = d / 2 - 0.55;
   body.userData.buildingId = def.id;
-  body.add(outline(bodyGeometry, PAPER.trim, 0.5));
+  body.add(outline(bodyGeometry, PAPER.trim, prototype || openPavilion ? 0.2 : 0.34));
   group.add(body);
   hitTargets.push(body);
 
-  group.add(createSignature(def));
+  if (prototype) group.add(createPrototypeStructure(def));
+  const signature = createSignature(def);
+  signature.traverse((object) => {
+    if (object.userData.buildingId) hitTargets.push(object);
+  });
+  group.add(signature);
 
   const doorHeight = Math.min(1.95, h - 0.8);
   const doorWidth = Math.min(1.1, w * 0.3);
 
+  if (!openPavilion) {
   const frame = shadowed(new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.32, doorHeight + 0.22, 0.18), toon(accent.ink)));
   frame.position.set(0, (doorHeight + 0.22) / 2, d / 2 + 0.03);
   group.add(frame);
@@ -172,7 +223,32 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
   doormat.receiveShadow = true;
   group.add(doormat);
 
-  if (h > 2.2) {
+  if (prototype) {
+    [-1, 1].forEach((side) => {
+      group.add(m(
+        beveledBox(0.2, doorHeight + 0.36, 0.26, 0.035),
+        PAPER.roofSide,
+        side * (doorWidth / 2 + 0.25),
+        (doorHeight + 0.36) / 2,
+        d / 2 + 0.16,
+      ));
+    });
+    group.add(m(
+      beveledBox(doorWidth + 0.76, 0.2, 0.34, 0.04),
+      PAPER.roofSide,
+      0,
+      doorHeight + 0.32,
+      d / 2 + 0.18,
+    ));
+    if (def.id === "observatory") {
+      const canopy = m(beveledBox(doorWidth + 0.96, 0.12, 0.86, 0.035), accent.soft, 0, doorHeight + 0.5, d / 2 + 0.48);
+      canopy.rotation.x = -0.08;
+      group.add(canopy);
+    }
+  }
+  }
+
+  if (!openPavilion && h > 2.2) {
     // 窗按墙面尺寸排布：楼越大，开的窗越多
     const cols = Math.max(2, Math.round(w / 2.4));
     const spacing = w / cols;
@@ -191,11 +267,21 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
         const x = (c - (cols - 1) / 2) * spacing;
         if (r === 0 && Math.abs(x) < doorWidth * 0.85 + 0.2) continue;
         const win = new THREE.Mesh(frontGeometry, toon(PAPER.window));
-        win.position.set(x, y, d / 2 + 0.04);
+        win.position.set(x, y, d / 2 + (prototype ? 0.16 : 0.04));
         win.userData.buildingId = def.id;
+        if (prototype) {
+          const frame = m(beveledBox(winW + 0.2, winH + 0.2, 0.16, 0.025), PAPER.roofSide, x, y, d / 2 + 0.07);
+          group.add(frame);
+          const mullionV = new THREE.Mesh(new THREE.BoxGeometry(0.055, winH, 0.035), toon(PAPER.wall));
+          mullionV.position.set(x, y, d / 2 + 0.225);
+          group.add(mullionV);
+          const mullionH = new THREE.Mesh(new THREE.BoxGeometry(winW, 0.055, 0.035), toon(PAPER.wall));
+          mullionH.position.set(x, y, d / 2 + 0.225);
+          group.add(mullionH);
+        }
         group.add(win);
         hitTargets.push(win);
-        const sash = outline(frontGeometry, PAPER.trim, 0.5);
+        const sash = outline(frontGeometry, PAPER.trim, prototype ? 0.28 : 0.5);
         sash.position.copy(win.position);
         group.add(sash);
       }
@@ -204,11 +290,21 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
       for (let c = 0; c < sideCols; c += 1) {
         const z = (c - (sideCols - 1) / 2) * (d / sideCols);
         const win = new THREE.Mesh(sideGeometry, toon(PAPER.window));
-        win.position.set(sideSign * (w / 2 + 0.04), y, z);
+        win.position.set(sideSign * (w / 2 + (prototype ? 0.16 : 0.04)), y, z);
         win.userData.buildingId = def.id;
+        if (prototype) {
+          const frame = m(beveledBox(0.16, winH + 0.2, winW + 0.2, 0.025), PAPER.roofSide, sideSign * (w / 2 + 0.07), y, z);
+          group.add(frame);
+          const mullionV = new THREE.Mesh(new THREE.BoxGeometry(0.035, winH, 0.055), toon(PAPER.wall));
+          mullionV.position.set(sideSign * (w / 2 + 0.225), y, z);
+          group.add(mullionV);
+          const mullionH = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.055, winW), toon(PAPER.wall));
+          mullionH.position.set(sideSign * (w / 2 + 0.225), y, z);
+          group.add(mullionH);
+        }
         group.add(win);
         hitTargets.push(win);
-        const sash = outline(sideGeometry, PAPER.trim, 0.5);
+        const sash = outline(sideGeometry, PAPER.trim, prototype ? 0.28 : 0.5);
         sash.position.copy(win.position);
         group.add(sash);
       }
@@ -258,10 +354,13 @@ export function createBuilding(def: BuildingDef): BuildingHandle {
 
 /* ------------------------------ 地面与装饰 ------------------------------ */
 
-export function createGround(size: number): THREE.Group {
+export function createGround(size: number, paperTexture?: THREE.Texture): THREE.Group {
   const group = new THREE.Group();
 
-  const base = new THREE.Mesh(new THREE.BoxGeometry(size * 2, 0.5, size * 2), toon(PAPER.ground));
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(size * 2, 0.5, size * 2),
+    toon(PAPER.ground, THREE.FrontSide, paperTexture),
+  );
   base.position.y = -0.25;
   base.receiveShadow = true;
   group.add(base);

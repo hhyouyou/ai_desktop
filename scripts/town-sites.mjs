@@ -2,7 +2,7 @@
  * 逐个地点验收：把镜头推到每处院落拍特写，再让人物走过去确认寻路可达。
  *
  * 用法：node scripts/town-sites.mjs [id1 id2 ...]
- * 不带参数时跑 SITES 里全部五个新院落。
+ * 不带参数时验收全部 13 栋建筑；BUILDING_SHOTS=1 时按建筑包围盒拍全景。
  */
 
 import { spawn } from "node:child_process";
@@ -15,11 +15,19 @@ const BASE = process.env.TOWN_BASE || "http://127.0.0.1:4310";
 const OUT_DIR = path.join(process.cwd(), ".tmp");
 
 const ALL = [
+  { id: "workshop", x: -10.4, z: -31.2, zoom: 3.2 },
   { id: "typewriter", x: -11.9, z: -20, zoom: 3.6 },
+  { id: "telegraph", x: 7.5, z: -24.6, zoom: 3.4 },
+  { id: "bookshop", x: 24.5, z: -16.2, zoom: 3.4 },
   { id: "radio", x: 30, z: -27.8, zoom: 3.4 },
+  { id: "observatory", x: -33.5, z: 0.5, zoom: 3.4 },
   { id: "kiosk", x: -8.6, z: 33, zoom: 3.6 },
+  { id: "gazette", x: 30, z: 7.2, zoom: 3.2 },
+  { id: "townhall", x: 7.9, z: 7.2, zoom: 3.2 },
   { id: "atelier", x: 26, z: 28.4, zoom: 3.4 },
   { id: "board", x: -15, z: 6.4, zoom: 3.4 },
+  { id: "cafe", x: -9.2, z: 25, zoom: 3.4 },
+  { id: "clocktower", x: 8.75, z: 24, zoom: 3.2 },
 ];
 
 const wanted = process.argv.slice(2);
@@ -136,22 +144,28 @@ async function main() {
   await sleep(9000);
 
   const shootOnly = process.env.SHOTS_ONLY === "1";
+  const buildingShots = process.env.BUILDING_SHOTS === "1";
   const results = [];
 
   for (const site of sites) {
     // 先拍院落特写
     await evaluate(cdp, `window.__town && window.__town.resetView()`);
     await sleep(300);
-    await evaluate(cdp, `window.__town && window.__town.focusOn(${site.x}, ${site.z}, ${site.zoom})`);
+    await evaluate(
+      cdp,
+      buildingShots
+        ? `window.__town && window.__town.focusBuilding('${site.id}')`
+        : `window.__town && window.__town.focusOn(${site.x}, ${site.z}, ${site.zoom})`,
+    );
     await sleep(1700);
-    const file = await shoot(cdp, `town-site-${site.id}.png`);
+    const file = await shoot(cdp, `${buildingShots ? "town-building" : "town-site"}-${site.id}.png`);
 
     // 再验证能不能走到门口
     let arrived = { card: false, name: null };
     let state = null;
     if (!shootOnly) {
       await evaluate(cdp, `window.__town && window.__town.goToBuilding('${site.id}')`);
-      for (let i = 0; i < 110; i += 1) {
+      for (let i = 0; i < 240; i += 1) {
         await sleep(900);
         state = await evaluate(cdp, `window.__town && window.__town.getState()`);
         arrived = await evaluate(
@@ -172,8 +186,10 @@ async function main() {
       cardName: arrived.name,
       pos: state ? `${state.x.toFixed(1)},${state.z.toFixed(1)}` : null,
       arrivedFlag: state ? state.arrived : null,
+      moving: state ? state.moving : null,
+      target: state ? state.target : null,
     });
-    console.log(`[${site.id}] 卡片=${arrived.card} 名称=${arrived.name ?? "-"} 位置=${state ? state.x.toFixed(1) + "," + state.z.toFixed(1) : "-"}`);
+    console.log(`[${site.id}] 卡片=${arrived.card} 名称=${arrived.name ?? "-"} 位置=${state ? state.x.toFixed(1) + "," + state.z.toFixed(1) : "-"} 移动=${state?.moving ?? "-"}`);
   }
 
   await evaluate(cdp, `window.__town && window.__town.resetView()`);

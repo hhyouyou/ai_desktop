@@ -150,7 +150,7 @@ export function createBoardTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-/** 一张极淡的纸纹，用作地面 */
+/** 中性、低对比且可复现的纸纹，乘在墙面上不会改变原有色板。 */
 export function createPaperTexture(): THREE.CanvasTexture {
   const size = 256;
   const canvas = document.createElement("canvas");
@@ -158,16 +158,21 @@ export function createPaperTexture(): THREE.CanvasTexture {
   canvas.height = size;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    ctx.fillStyle = "#EFE6D3";
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, size, size);
+    let seed = 20261106;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
     for (let i = 0; i < 2600; i += 1) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const alpha = 0.02 + Math.random() * 0.05;
-      ctx.fillStyle = Math.random() > 0.5
-        ? `rgba(120, 96, 66, ${alpha})`
-        : `rgba(255, 252, 240, ${alpha})`;
-      ctx.fillRect(x, y, 1.4, 1.4);
+      const x = random() * size;
+      const y = random() * size;
+      const alpha = 0.015 + random() * 0.025;
+      ctx.fillStyle = random() > 0.42
+        ? `rgba(104, 88, 68, ${alpha})`
+        : `rgba(255, 255, 255, ${alpha + 0.03})`;
+      ctx.fillRect(x, y, 1.2, 1.2);
     }
   }
 

@@ -59,7 +59,7 @@ export const PAPER = {
   leaf: 0x8aa96e,
   leafDark: 0x627f4c,
   trunk: 0x9b7a56,
-  window: 0xfff8e6,
+  window: 0x8faeb5,
   glass: 0xcfdfe0,
 } as const;
 
@@ -324,6 +324,46 @@ export const BUILDINGS: BuildingDef[] = [
     extras: ["clock", "flag"],
   },
 ];
+
+/** 与主楼相连的独立体量：使用建筑局部坐标，渲染与寻路共用同一份数据。 */
+export type BuildingAnnexDef = {
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  h: number;
+  roof: "flat" | "gable" | "shed";
+  roofTone?: "base" | "soft";
+  wallTone?: "wall" | "side";
+  windows?: "front" | "side" | "both" | "none";
+};
+
+export const BUILDING_ANNEXES: Partial<Record<string, BuildingAnnexDef[]>> = {
+  workshop: [
+    { x: -4.84, z: -0.35, w: 2, d: 3.5, h: 3.1, roof: "shed", roofTone: "soft", wallTone: "side", windows: "both" },
+  ],
+  typewriter: [
+    { x: -1.2, z: -3.75, w: 2.6, d: 2.4, h: 3.2, roof: "gable", roofTone: "soft", windows: "both" },
+  ],
+  telegraph: [
+    { x: 3.86, z: -0.55, w: 2, d: 3.4, h: 3.3, roof: "flat", roofTone: "base", wallTone: "side", windows: "both" },
+  ],
+  bookshop: [
+    { x: 1, z: -3.75, w: 3.2, d: 2.4, h: 3.4, roof: "gable", roofTone: "soft", windows: "both" },
+  ],
+  gazette: [
+    { x: 1.1, z: -4.16, w: 3.4, d: 3, h: 3.8, roof: "gable", roofTone: "soft", wallTone: "side", windows: "both" },
+  ],
+  townhall: [
+    { x: 4.64, z: -0.65, w: 1.7, d: 3.4, h: 3.6, roof: "flat", roofTone: "soft", windows: "both" },
+  ],
+  board: [
+    { x: -3.24, z: -0.35, w: 2, d: 3, h: 2.8, roof: "shed", roofTone: "soft", wallTone: "side", windows: "both" },
+  ],
+  cafe: [
+    { x: 3.45, z: -0.35, w: 1.8, d: 2.8, h: 2.9, roof: "gable", roofTone: "soft", windows: "both" },
+  ],
+};
 
 /* ------------------------------ 地点附属物 ------------------------------ */
 
